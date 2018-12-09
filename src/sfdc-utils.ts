@@ -16,6 +16,11 @@ export async function queryAllRecords(conn: jsforce.Connection): Promise<CustomS
   return results.records;
 }
 
+export async function queryAllRecordsWithoutCode(conn: jsforce.Connection): Promise<CustomScriptBase[]> {
+  const results = await conn.query<CustomScriptBase>(QUERIES.ALL_WITHOUT_CODE());
+  return results.records;
+}
+
 export async function queryRecordsById(conn: jsforce.Connection, id: string): Promise<CustomScript[]> {
   const results = await conn.query<CustomScript>(QUERIES.BY_ID_RECS(id));
   return results.records;

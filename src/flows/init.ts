@@ -1,7 +1,10 @@
-import { QuickPickItem, window } from 'vscode';
-import { INPUT_OPTIONS } from '../constants';
+import { QuickPickItem, window, workspace, ExtensionContext } from 'vscode';
+import { INPUT_OPTIONS, GITIGNORE_CONTENTS, QP } from '../constants';
 import { OrgInfo, OrgType } from '../models';
 import * as _ from 'lodash';
+import { readFile, writeFile, readdir } from 'fs-extra';
+import { getPathWithFileName } from '../utils';
+import { basename } from 'path';
 
 /**
  * Get credentials
@@ -55,16 +58,47 @@ async function getOrgType(orgInfo: OrgInfo): Promise<string | undefined> {
 
   if (pickedItem) {
     orgInfo.orgType = pickedItem.label as OrgType;
-    switch (orgInfo.orgType) {
-      case 'Sandbox': {
-        return 'https://test.salesforce.com';
-      }
-      case 'Custom URL': {
-        return await window.showInputBox(INPUT_OPTIONS.INIT_ORG_TYPE_CUSTOM_INPUT(orgInfo.username));
-      }
-      default: {
-        return 'https://login.salesforce.com';
-      }
+    if (pickedItem.label === QP.INIT_ORG_TYPE_QUICK_ITEM.CUSTOM) {
+      return await window.showInputBox(INPUT_OPTIONS.INIT_ORG_TYPE_CUSTOM_INPUT(orgInfo.username));
     }
+    return pickedItem.description;
+  }
+}
+
+export async function createOrUpdateGitignore() {
+  const existingGitIgnore = (await workspace.findFiles('.gitignore', null, 1))[0];
+  let fileToUpdateOrCreate: string = '';
+  let filePath;
+  if (existingGitIgnore) {
+    filePath = existingGitIgnore.fsPath;
+    // search through and see if .qcp exists in it, if not, add it
+    const gitignore = await readFile(existingGitIgnore.fsPath, 'UTF-8');
+    const lines = gitignore.split('\n');
+    const existingIdx = lines.findIndex(line => line.trim() === '.qcp');
+    if (existingIdx < 0) {
+      fileToUpdateOrCreate = gitignore + GITIGNORE_CONTENTS;
+    }
+  } else {
+    filePath = getPathWithFileName('.gitignore');
+    // create the file!
+    fileToUpdateOrCreate = GITIGNORE_CONTENTS;
+  }
+  if (fileToUpdateOrCreate) {
+    await writeFile(filePath, fileToUpdateOrCreate);
+  }
+}
+
+export async function getExampleFilesToPull(context: ExtensionContext): Promise<{ picked: string[]; all: string[] } | undefined> {
+  const srcPath = context.asAbsolutePath(`extension-files/src`);
+
+  const exampleFiles = await readdir(srcPath);
+
+  const pickedFiles = await window.showQuickPick(INPUT_OPTIONS.INIT_QCP_EXAMPLE_ALL(exampleFiles), { canPickMany: true });
+  console.log('pickedFiles', pickedFiles);
+  if (pickedFiles && pickedFiles.length > 0) {
+    return {
+      picked: pickedFiles.map(file => file.label),
+      all: exampleFiles,
+    };
   }
 }

@@ -1,11 +1,13 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ProgressLocation, window, workspace } from 'vscode';
-import { FILE_PATHS, INPUT_OPTIONS, MESSAGES } from './constants';
-import { createConfig } from './flows/init';
-import { queryFilesAndSave, getFileToPull } from './flows/pull';
+import { Disposable, ProgressLocation, window, workspace, TextDocument, ExtensionContext } from 'vscode';
+import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP } from './constants';
+import { createConfig, createOrUpdateGitignore, getExampleFilesToPull } from './flows/init';
+import { queryFilesAndSave, getFileToPull, getRemoteFiles } from './flows/pull';
 import { getFileToPush, pushFile } from './flows/push';
 import { ConfigData, StringOrUndefined } from './models';
-import { copyFile, fileExists, getAllSrcFiles, readAsJson, saveConfig } from './utils';
+import { copyFile, fileExists, getAllSrcFiles, readAsJson, saveConfig, copyExtensionFileToProject } from './utils';
+import { backupLocal, backupFromRemote } from './flows/backup';
+import { initConnection } from './sfdc-utils';
 
 export class QcpExtension {
   private isInit = false;
@@ -22,13 +24,14 @@ export class QcpExtension {
 
   conn: jsforce.Connection | undefined;
 
-  private subscriptions: Disposable[] = [];
+  private context: ExtensionContext;
+  private subscriptions: Disposable[];
 
-  constructor() {
-    console.log('constructor()');
-
-    workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions);
-
+  constructor(context: ExtensionContext) {
+    this.context = context;
+    this.subscriptions = context.subscriptions;
+    // Register
+    this.registerListeners();
     this.initProject()
       .then(() => {
         console.log('Project Initialized');
@@ -38,12 +41,17 @@ export class QcpExtension {
       });
   }
 
+  registerListeners() {
+    workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions);
+  }
+
   async initProject(): Promise<void> {
     if (workspace.name && workspace.rootPath) {
       const existingConfig = (await workspace.findFiles(FILE_PATHS.CONFIG.target, null, 1))[0];
       if (existingConfig) {
         this.configData = readAsJson<ConfigData>(existingConfig.fsPath);
         this.isInit = true;
+        console.log('Project is SFDC QCP project.');
       }
     }
   }
@@ -55,11 +63,30 @@ export class QcpExtension {
    */
 
   /**
+   * COMMAND: Test Credentials
+   * Checks to see if credentials are valid
+   * NOTE: this is called from the INIT() command, and also called the INIT() command if user chooses to re-initialize
+   */
+  async testCredentials(): Promise<boolean> {
+    try {
+      await initConnection(this.configData.orgInfo, this.conn);
+      window.showInformationMessage(MESSAGES.INIT.ORG_VALID);
+      return true;
+    } catch (ex) {
+      const action = await window.showErrorMessage(MESSAGES.INIT.ORG_INVALID, 'Re-Initialize');
+      if (action === 'Re-Initialize') {
+        await this.init(true);
+      }
+      return false;
+    }
+  }
+
+  /**
    * COMMAND: Initialize
    * This sets up a new project, or allows user to re-enter credentials
    * This will create all config/example files if they don't already exist
    */
-  async init(): Promise<StringOrUndefined> {
+  async init(isReInit?: boolean): Promise<StringOrUndefined> {
     if (!workspace.name || !workspace.rootPath) {
       return window.showErrorMessage(MESSAGES.INIT.NO_WORKSPACE);
     }
@@ -80,13 +107,16 @@ export class QcpExtension {
 
     try {
       // This will ignore copying if the files do not already exist
-      await copyFile(FILE_PATHS.README.target, FILE_PATHS.README.contents);
-      await copyFile(FILE_PATHS.TSCONFIG.target, FILE_PATHS.TSCONFIG.contents);
-
-      window.showInformationMessage(MESSAGES.INIT.SUCCESS);
+      await copyExtensionFileToProject(this.context, FILE_PATHS.README.src, FILE_PATHS.README.target);
+      await copyExtensionFileToProject(this.context, FILE_PATHS.TSCONFIG.src, FILE_PATHS.TSCONFIG.target);
+      // await copyFile(FILE_PATHS.README.target, FILE_PATHS.README.contents);
+      // await copyFile(FILE_PATHS.TSCONFIG.target, FILE_PATHS.TSCONFIG.contents);
+      await createOrUpdateGitignore();
     } catch (ex) {
       return window.showErrorMessage(`Error initializing project: ${ex.message}`);
     }
+
+    await this.testCredentials();
 
     // Create example QCP file or pull all from org
     try {
@@ -94,13 +124,13 @@ export class QcpExtension {
       if (!hasExistingFiles) {
         const pickedItem = await window.showQuickPick(INPUT_OPTIONS.INIT_QCP_EXAMPLE());
         if (pickedItem) {
-          if (pickedItem.label === 'Start with example QCP file') {
-            await copyFile(FILE_PATHS.QCP.target, FILE_PATHS.QCP.contents);
+          if (pickedItem.label === QP.INIT_QCP_EXAMPLE.EXAMPLE) {
+            await this.initExampleFiles();
           } else {
-            if (pickedItem.label === 'Pull all QCP files and create example QCP file') {
-              await copyFile(FILE_PATHS.QCP.target, FILE_PATHS.QCP.contents);
+            if (pickedItem.label === QP.INIT_QCP_EXAMPLE.EXAMPLE_AND_PULL) {
+              await this.initExampleFiles();
             }
-            await queryFilesAndSave(this.configData, this.conn);
+            await queryFilesAndSave(this.configData, { conn: this.conn });
           }
         }
       }
@@ -109,6 +139,38 @@ export class QcpExtension {
     }
   }
 
+  /**
+   * COMMAND: Initialize Example Files
+   * This sets up a new project, or allows user to re-enter credentials
+   * This will create all config/example files if they don't already exist
+   */
+  async initExampleFiles() {
+    try {
+      const output = await getExampleFilesToPull(this.context);
+      console.log('pickedFiles', output);
+      if (output) {
+        const { picked, all } = output;
+        let filesToCopy = picked;
+        if (picked && picked.length > 0) {
+          if (picked.find(item => item === QP.EXAMPLES.ALL)) {
+            filesToCopy = all;
+          }
+          for (let file of filesToCopy) {
+            await copyExtensionFileToProject(this.context, `src/${file}`, `src/${file}`, true);
+            window.showInformationMessage(MESSAGES.INIT.EXAMPLE_FILES_COPIED);
+          }
+        }
+      }
+    } catch (ex) {
+      console.log('Error copying example files', ex);
+      window.showErrorMessage(ex.message);
+    }
+  }
+
+  /**
+   * COMMAND: PULL FILES
+   * This pulls all files from SFDC, saves them the the /src directory, and adds an entry in the config for this file
+   */
   async pullFiles() {
     // TODO: ask user if they want to overwrite from remote, Y/N/ask for each
 
@@ -120,7 +182,7 @@ export class QcpExtension {
       },
       async (progress, token) => {
         try {
-          const records = await queryFilesAndSave(this.configData, this.conn);
+          const records = await queryFilesAndSave(this.configData, { conn: this.conn });
           window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
           return;
         } catch (ex) {
@@ -131,6 +193,10 @@ export class QcpExtension {
     );
   }
 
+  /**
+   * COMMAND: PULL FILE
+   * This pulls one file, chosen by the user, from SFDC, and saves the file to the /src directory and updates the entry in the config
+   */
   async pullFile() {
     try {
       const customScriptFile = await getFileToPull(this.configData);
@@ -143,7 +209,7 @@ export class QcpExtension {
           },
           async (progress, token) => {
             try {
-              const records = await queryFilesAndSave(this.configData, this.conn, customScriptFile);
+              const records = await queryFilesAndSave(this.configData, { conn: this.conn, customScriptFile, clearFileData: false });
               window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
               return;
             } catch (ex) {
@@ -153,9 +219,31 @@ export class QcpExtension {
           },
         );
       }
-    } catch (ex) {}
+    } catch (ex) {
+      console.log('Error pulling', ex);
+    }
   }
 
+  /**
+   * COMMAND: PULL REMOTE FILE
+   * Get list of files on SFDC and pull specific file
+   */
+  async pullRemoteFile() {
+    try {
+      const records = await getRemoteFiles(this.configData, this.conn);
+      if (records) {
+        window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+      }
+    } catch (ex) {
+      console.log('Error pulling remove file', ex);
+      window.showErrorMessage(ex.message);
+    }
+  }
+
+  /**
+   * COMMAND: PUSH FILE
+   * Allows user to specify a file to push to SFDC
+   */
   async pushFile() {
     // TODO: either push current file or choose one (maybe default to active file)
     try {
@@ -186,6 +274,12 @@ export class QcpExtension {
       window.showErrorMessage(ex.message);
     }
   }
+
+  /**
+   * COMMAND: PUSH ALL FILES
+   * Saves all files to SFDC
+   */
+
   async pushAllFiles() {
     try {
       const pickedItem = await window.showQuickPick(INPUT_OPTIONS.PUSH_ALL_CONFIRM());
@@ -230,13 +324,57 @@ export class QcpExtension {
   }
 
   /**
+   * COMMAND: Backup
+   * Allows user to copy all local files to a backup folder
+   * Allows user to copy all remote records to a backup folder
+   */
+  async backup() {
+    try {
+      const pickedOption = await window.showQuickPick(INPUT_OPTIONS.BACKUP_CHOOSE_SRC());
+      if (pickedOption) {
+        const isLocal = pickedOption.label === QP.BACKUP_CHOOSE_SRC.LOCAL;
+
+        window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: MESSAGES.BACKUP.IN_PROGRESS(isLocal ? 'src directory' : 'Salesforce'),
+            cancellable: false,
+          },
+          async (progress, token) => {
+            try {
+              if (isLocal) {
+                const folderName = await backupLocal();
+                window.showInformationMessage(MESSAGES.BACKUP.SUCCESS('local', folderName));
+              } else {
+                const folderName = await backupFromRemote(this.configData, this.conn);
+                window.showInformationMessage(MESSAGES.BACKUP.SUCCESS('remote', folderName));
+              }
+            } catch (ex) {
+              console.log(ex);
+              window.showErrorMessage(`Error buckup up files: ${ex.message}.`);
+            }
+          },
+        );
+      }
+    } catch (ex) {}
+  }
+
+  /**
    *
    * EVENT LISTENERS
    *
    */
 
-  async onSave() {
+  /**
+   * EVENT: onSave
+   * When the config file is manually modified, the contents is re-read into the configuration in memory
+   */
+  async onSave(ev: TextDocument) {
     // TODO: on save, look at settings and figure out if action is needed
     // If user manually updated config, we need to know!
+    if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {
+      this.configData = readAsJson<ConfigData>(ev.fileName);
+      console.log('Config file updated');
+    }
   }
 }

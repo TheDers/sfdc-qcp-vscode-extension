@@ -9,14 +9,16 @@ export const contents = `
       ],
       "allowJs": true,
       "watch": false,
-      "noImplicitAny": false
+      "noImplicitAny": false,
+      "noUnusedLocals": false,
+      "allowUnusedLabels": true,
+      "allowUnreachableCode": true,
   },
   "include": [
       "src/*"
   ],
   "exclude": [
-      "node_modules",
-      ".vscode-test"
+      "node_modules"
   ]
 }
 `;

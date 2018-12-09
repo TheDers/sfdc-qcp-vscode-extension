@@ -1,9 +1,9 @@
 import { exec } from 'child_process';
-import { workspace, Uri } from 'vscode';
-import { writeFile, readFileSync, writeJson, ensureFile } from 'fs-extra';
+import { workspace, Uri, ExtensionContext } from 'vscode';
+import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';
 import { ConfigData, CustomScript } from './models';
-import { FILE_PATHS } from './constants';
+import { FILE_PATHS, REGEX } from './constants';
 import { getRecWithoutCode } from './sfdc-utils';
 
 export function getPathWithFileName(fileOrFolderName: string) {
@@ -32,14 +32,48 @@ export async function getAllSrcFiles(max: number = 50): Promise<Uri[]> {
   return await workspace.findFiles(glob, null, max);
 }
 
+export async function getBackupFolderName(suffix?: string) {
+  const folderName = new Date().toJSON().substring(0, 10);
+  let fullPathFolderName = getPathWithFileName(folderName);
+  if (suffix) {
+    fullPathFolderName += `-${suffix}`;
+  }
+  return getUnusedFolderName(fullPathFolderName);
+}
+
+/**
+ * This gets a folder path, but if it is in use, a number suffix is added
+ */
+export function getUnusedFolderName(folderPath: string): string {
+  if (pathExistsSync(folderPath)) {
+    let suffixNumber = 1;
+    let pathWithoutSuffix = folderPath;
+    if (REGEX.ENDS_WITH_DASH_NUM.test(folderPath)) {
+      const match = (folderPath.match(REGEX.ENDS_WITH_DASH_NUM) as RegExpMatchArray).index as number;
+      suffixNumber = Number(folderPath.substring(match + 1)) + 1;
+      pathWithoutSuffix = folderPath.substring(0, match);
+    }
+    return getUnusedFolderName(`${pathWithoutSuffix}-${suffixNumber}`);
+  } else {
+    return folderPath;
+  }
+}
+
 /**
  * Copy file
  * @param fileName path to file
  * @param targetFilename path to copy file to
  * @param overwriteIfExists overwrite target file if it already exists, defaults to false
  */
-export async function copyFile(targetFilename: string, contents: string, overwriteIfExists: boolean = false): Promise<boolean> {
-  targetFilename = getPathWithFileName(targetFilename);
+export async function copyFile(
+  targetFilename: string,
+  contents: string,
+  overwriteIfExists: boolean = false,
+  alredyFullPath: boolean = false,
+): Promise<boolean> {
+  if (!alredyFullPath) {
+    targetFilename = getPathWithFileName(targetFilename);
+  }
   if (overwriteIfExists || !(await fileExists(targetFilename))) {
     // creating new config file
     try {
@@ -55,28 +89,14 @@ export async function copyFile(targetFilename: string, contents: string, overwri
   }
 }
 
-export async function compileQCP() {
-  const compileCommand = `tsc -p ${workspace.rootPath}`;
-  await execAsync(compileCommand);
-}
-
-/**
- * Promise for stdout from exec
- *
- * @param command the command to pass through to exec
- * @returns Promise for string with stdout
- */
-export async function execAsync(command: string): Promise<string> {
-  return new Promise((resolve: (value?: string | PromiseLike<string> | undefined) => void, reject) => {
-    exec(command, (err, stdout, stderr) => {
-      if (err || stderr) {
-        const errorMessage = err ? err.message : stderr;
-        reject(errorMessage);
-      } else {
-        resolve(stdout);
-      }
-    });
-  });
+export async function copyExtensionFileToProject(context: ExtensionContext, src: string, dest: string, overwriteIfExists: boolean = false) {
+  const srcPath = context.asAbsolutePath(`extension-files/${src}`);
+  const targetFilename = getPathWithFileName(dest);
+  const exists = await fileExists(dest);
+  if (overwriteIfExists || !exists) {
+    await ensureFile(targetFilename);
+    copyFileSync(srcPath, targetFilename);
+  }
 }
 
 export async function saveRecordsToConfig(configData: ConfigData, records: CustomScript[]) {
