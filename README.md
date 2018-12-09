@@ -4,6 +4,8 @@ This plugin improves the horrid developer experience for working with Salesforce
 
 Say goodbye to copy and paste, and say hello to VSCode!
 
+![image](https://user-images.githubusercontent.com/5461649/49703193-40d7a600-fbbf-11e8-91bb-3a471e9a3591.png)
+
 ## Important Details
 Locally, all files are saved as Typescript files, put there is no compilation so you will still need to write valid ES6 javascript instead.
 
