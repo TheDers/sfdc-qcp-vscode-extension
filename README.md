@@ -1,6 +1,6 @@
-# sfdc-qcp-extension README
+# sfdc-qcp-vscode-extension README
 
-This is the README for your extension "sfdc-qcp-extension". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "sfdc-qcp-vscode-extension". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 

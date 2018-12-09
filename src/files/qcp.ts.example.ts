@@ -1,3 +1,4 @@
+export const contents = `
 // http://community.steelbrick.com/t5/Plugins/JS-Quote-Calculator-Plugin-Template/ta-p/1862
 /*
  * This is a sample plugin for use in the new JavaScript Quote Calculator. It exports all of the methods that
@@ -74,3 +75,4 @@ export function onAfterCalculate(quoteModel, quoteLineModels) {
     resolve();
   });
 }
+`;

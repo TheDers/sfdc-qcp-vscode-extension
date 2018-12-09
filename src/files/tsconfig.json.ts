@@ -1,3 +1,4 @@
+export const contents = `
 {
   "compilerOptions": {
       "module": "es6",
@@ -18,3 +19,4 @@
       ".vscode-test"
   ]
 }
+`;

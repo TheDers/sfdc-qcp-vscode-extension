@@ -1,7 +1,7 @@
 {
-  "name": "sfdc-qcp-extension",
-  "displayName": "sfdc-qcp-extension",
-  "description": "Salesforce CPQ Quote Calculator Plugin Extension",
+  "name": "sfdc-qcp-vscode-extension",
+  "displayName": "sfdc-qcp-vscode-extension",
+  "description": "Salesforce CPQ Quote Calculator Plugin VSCode Extension",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.29.0"
@@ -10,14 +10,39 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.sayHello"
+    "workspaceContains:.qcp/qcp-config.json",
+    "onCommand:extension.init",
+    "onCommand:extension.pullAll",
+    "onCommand:extension.push",
+    "onCommand:extension.pushAll"
   ],
   "main": "./out/extension",
   "contributes": {
     "commands": [
       {
-        "command": "extension.sayHello",
-        "title": "Hello World"
+        "command": "extension.init",
+        "title": "Initialize Project",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.pull",
+        "title": "Pull specified QCP file from SFDC",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.pullAll",
+        "title": "Pull all QCP files from Salesforce",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.push",
+        "title": "Push file to Salesforce",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.pushAll",
+        "title": "Push all files to Salesforce",
+        "category": "SFDC QCP"
       }
     ]
   },
@@ -37,6 +62,7 @@
   },
   "dependencies": {
     "@types/fs-extra": "^5.0.4",
-    "fs-extra": "^7.0.1"
+    "fs-extra": "^7.0.1",
+    "jsforce": "^1.9.1"
   }
 }
