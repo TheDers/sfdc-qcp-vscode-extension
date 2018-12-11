@@ -1,19 +1,21 @@
 # sfdc-qcp-vscode-extension README
 
-This plugin improves the horrid developer experience for working with Salesforce QCP Quote Calculator Plugin scripts.
+This plugin improves the horrid developer experience for working with [Salesforce QCP Quote Calculator Plugin](https://developer.salesforce.com/docs/atlas.en-us.cpq_dev_plugins.meta/cpq_dev_plugins/cpq_plugins_parent.htm) scripts.
 
-Say goodbye to copy and paste, and say hello to VSCode!
+Say goodbye to copy-and-paste, say hello to VSCode!
 
 ![image](https://user-images.githubusercontent.com/5461649/49703193-40d7a600-fbbf-11e8-91bb-3a471e9a3591.png)
 
 ## Important Details
-Locally, all files are saved as Typescript files, put there is no compilation so you will still need to write valid ES6 javascript instead.
+Locally, all files are saved as Typescript files, but there is no compilation so you will still need to write valid ES6 javascript instead.
 
 The reason for this is because there are may times when someone else changes the remote file or a sandbox is refreshed, it would be nearly
 impossible to pull the Javascript from SFDC and then turn that back into TypeScript.
 
 In the future, it would be nice to have a "TypeScript mode" where the developers can truly be in bliss with TypeScript for development,
 but that also means that the developer should never pull files down from SFDC, as they would be the JavaScript equivalent.
+
+Your credentials will be stored as plaintext within a file in the created `.qcp` directory, but the extension creates or updates your `.gitignore` file to ensure this does not get committed to source control.
 
 ## Features
 
@@ -54,8 +56,13 @@ This plugin comes with the following core features:
 
 
 ### Project Initialization
+**To get started, create a blank folder and open it with VSCode.**  You can use a folder with existing code if you want to.
+
+Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`.
+
 When you initialize a new project, You will be required to enter your org type, username, password, and API token (if needed).
-Your credential will be stored (in plain text for now - yikes!) in a file named `.qcp/qcp-config.json`
+Your credential will be stored (in plain text for now) in a file named `.qcp/qcp-config.json`.
+
 A `.gitignore` file will be created if one does not already exist and an entry for `.qcp` will be added to the file to ensure your credentials
 are note submitted to source control.
 
@@ -71,14 +78,20 @@ Upon initialization, you will be asked if you want to pull all the files from Sa
 
 ## Extension Settings
 
-None for now
+None for now.
 
 ## Known Issues
 
-1. Credentials are stored in plaintext. I plan to have better security and org connection options in the future.
+No known issues.
 
 ## Release Notes
 
-### 0.1.0
+### 0.1.1
+- Added additional information on getting started (#6)
+- Fixed typo in README (#7)
 
-Initial release of the Plugin.
+### 0.1.0
+- Initial release of the Plugin
+
+## Contributing
+I plan to open source the project in the future, but until then, please ask questions on the [Extension Marketplace page for this extension](https://marketplace.visualstudio.com/items?itemName=paustint.sfdc-qcp-vscode-extension#qna).
