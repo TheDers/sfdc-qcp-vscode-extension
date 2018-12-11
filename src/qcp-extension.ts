@@ -1,16 +1,15 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ProgressLocation, window, workspace, TextDocument, ExtensionContext } from 'vscode';
+import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace } from 'vscode';
 import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP } from './constants';
+import { backupFromRemote, backupLocal } from './flows/backup';
 import { createConfig, createOrUpdateGitignore, getExampleFilesToPull } from './flows/init';
-import { queryFilesAndSave, getFileToPull, getRemoteFiles } from './flows/pull';
+import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFileToPush, pushFile } from './flows/push';
 import { ConfigData, StringOrUndefined } from './models';
-import { copyFile, fileExists, getAllSrcFiles, readAsJson, saveConfig, copyExtensionFileToProject } from './utils';
-import { backupLocal, backupFromRemote } from './flows/backup';
 import { initConnection } from './sfdc-utils';
+import { copyExtensionFileToProject, fileExists, getAllSrcFiles, readAsJson, saveConfig } from './utils';
 
 export class QcpExtension {
-  private isInit = false;
   private configData: ConfigData = {
     pushOnSave: false,
     orgInfo: {
@@ -50,7 +49,6 @@ export class QcpExtension {
       const existingConfig = (await workspace.findFiles(FILE_PATHS.CONFIG.target, null, 1))[0];
       if (existingConfig) {
         this.configData = readAsJson<ConfigData>(existingConfig.fsPath);
-        this.isInit = true;
         console.log('Project is SFDC QCP project.');
       }
     }

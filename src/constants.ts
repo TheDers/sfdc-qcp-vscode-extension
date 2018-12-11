@@ -1,7 +1,6 @@
 import { InputBoxOptions, QuickPickItem, Uri } from 'vscode';
-import { CustomScriptFile, CustomScriptBase } from './models';
 import { FILES } from './files';
-import { basename } from 'path';
+import { CustomScriptBase, CustomScriptFile } from './models';
 
 /**
  * This file contains extension constants

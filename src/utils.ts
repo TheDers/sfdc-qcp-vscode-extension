@@ -1,4 +1,3 @@
-import { exec } from 'child_process';
 import { workspace, Uri, ExtensionContext } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';

@@ -2,7 +2,9 @@
   "name": "sfdc-qcp-vscode-extension",
   "displayName": "sfdc-qcp-vscode-extension",
   "description": "Salesforce CPQ Quote Calculator Plugin VSCode Extension",
-  "version": "0.0.1",
+  "publisher": "paustint",
+  "repository": "https://github.com/atginfo/sfdc-qcp-vscode-extension",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.29.0"
   },

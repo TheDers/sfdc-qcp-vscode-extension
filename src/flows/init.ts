@@ -1,10 +1,9 @@
-import { QuickPickItem, window, workspace, ExtensionContext } from 'vscode';
-import { INPUT_OPTIONS, GITIGNORE_CONTENTS, QP } from '../constants';
-import { OrgInfo, OrgType } from '../models';
+import { readdir, readFile, writeFile } from 'fs-extra';
 import * as _ from 'lodash';
-import { readFile, writeFile, readdir } from 'fs-extra';
+import { ExtensionContext, QuickPickItem, window, workspace } from 'vscode';
+import { GITIGNORE_CONTENTS, INPUT_OPTIONS, QP } from '../constants';
+import { OrgInfo, OrgType } from '../models';
 import { getPathWithFileName } from '../utils';
-import { basename } from 'path';
 
 /**
  * Get credentials
