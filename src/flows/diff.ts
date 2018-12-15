@@ -1,11 +1,10 @@
-import { readFile } from 'fs-extra';
 import * as jsforce from 'jsforce';
-import { commands, window, Uri } from 'vscode';
-import { INPUT_OPTIONS, MESSAGES } from '../common/constants';
-import { initConnection, queryRecordsById, queryAllRecordsWithoutCode } from '../common/sfdc-utils';
-import { getAllSrcFiles, getSfdcUri } from '../common/utils';
-import { ConfigData, CustomScriptFile, CustomScriptBase } from '../models';
 import { basename } from 'path';
+import { commands, Uri, window } from 'vscode';
+import { INPUT_OPTIONS } from '../common/constants';
+import { initConnection, queryAllRecordsWithoutCode } from '../common/sfdc-utils';
+import { getAllSrcFiles, getSfdcUri } from '../common/utils';
+import { ConfigData, CustomScriptBase } from '../models';
 
 async function getFileToCompare(skipFile?: string): Promise<string | undefined> {
   let existingFiles = await getAllSrcFiles();

@@ -1,23 +1,23 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, TextDocumentContentProvider } from 'vscode';
+import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace } from 'vscode';
 import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP, SETTINGS } from './common/constants';
-import { backupFromRemote, backupLocal } from './flows/backup';
-import { initializeOrgs, createOrUpdateGitignore, getExampleFilesToPull } from './flows/init';
-import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
-import { getFilesToPush, pushFile } from './flows/push';
-import { ConfigData, StringOrUndefined } from './models';
+import * as fileLogger from './common/file-logger';
 import { initConnection } from './common/sfdc-utils';
 import {
   copyExtensionFileToProject,
   fileExists,
   getAllSrcFiles,
+  getPathWithFileName,
   readAsJson,
   saveConfig,
   writeFileAsJson,
-  getPathWithFileName,
 } from './common/utils';
-import * as fileLogger from './common/file-logger';
-import { compareLocalWithRemote, compareLocalFiles, compareRemoteRecords } from './flows/diff';
+import { backupFromRemote, backupLocal } from './flows/backup';
+import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords } from './flows/diff';
+import { createOrUpdateGitignore, getExampleFilesToPull, initializeOrgs } from './flows/init';
+import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
+import { getFilesToPush, pushFile } from './flows/push';
+import { ConfigData, StringOrUndefined } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
 
 export class QcpExtension {
