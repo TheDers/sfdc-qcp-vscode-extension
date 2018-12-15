@@ -1,5 +1,5 @@
 import * as jsforce from 'jsforce';
-import { OrgInfo, CustomScript, CustomScriptBase } from './models';
+import { OrgInfo, CustomScript, CustomScriptBase } from '../models';
 import { QUERIES } from './constants';
 
 export async function initConnection(orgInfo: OrgInfo, conn?: jsforce.Connection): Promise<jsforce.Connection> {

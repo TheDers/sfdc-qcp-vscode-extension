@@ -1,15 +1,26 @@
 {
   "name": "sfdc-qcp-vscode-extension",
-  "displayName": "sfdc-qcp-vscode-extension",
-  "description": "Salesforce CPQ Quote Calculator Plugin VSCode Extension",
+  "displayName": "Salesforce CPQ - Quote Calculator Plugin",
+  "description": "Work with Salesforce CPQ Quote Calculator Plugin records without opening Salesforce.",
   "publisher": "paustint",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "engines": {
     "vscode": "^1.29.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "Salesforce",
+    "Salesforce CPQ",
+    "CPQ",
+    "QCP",
+    "Quote Calculator Plugin"
+  ],
+  "galleryBanner": {
+    "color": "#00A1DF",
+    "theme": "light"
+  },
   "activationEvents": [
     "workspaceContains:.qcp/qcp-config.json",
     "onCommand:extension.testCredentials",
@@ -20,10 +31,57 @@
     "onCommand:extension.pullRemote",
     "onCommand:extension.push",
     "onCommand:extension.pushAll",
-    "onCommand:extension.backup"
+    "onCommand:extension.backup",
+    "onCommand:extension.diff"
   ],
   "main": "./out/extension",
   "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "Salesforce CPQ - QCP configuration",
+      "properties": {
+        "sfdcQcp.pushOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "When a file is saved, show prompt asking if file should be pushed to Salesforce."
+        },
+        "sfdcQcp.saveLog": {
+          "type": "boolean",
+          "default": true,
+          "description": "Determines if a log file should be saved each time a record from Salesforce is pushed or pulled."
+        },
+        "sfdcQcp.maxLogEntries": {
+          "type": "integer",
+          "default": 150,
+          "description": "Determines the maximum number of entries in the log file.",
+          "minimum": 0
+        },
+        "sfdcQcp.prettier": {
+          "type": "boolean",
+          "default": true,
+          "description": "Determines if a .prettierrc file will be created on project initialization."
+        },
+        "sfdcQcp.prettierConfig": {
+          "type": "object",
+          "default": {
+            "printWidth": 140,
+            "parser": "typescript",
+            "semi": true,
+            "tabWidth": 2,
+            "useTabs": false,
+            "singleQuote": true,
+            "trailingComma": "all",
+            "bracketSpacing": true,
+            "arrowParens": "avoid",
+            "insertPragma": false
+          },
+          "markdownDescription": "Default [prettier configuration](https://prettier.io/docs/en/configuration.html) object. You must edit this configuration in JSON mode."
+        }
+      }
+    },
+    "configurationDefaults": {
+
+    },
     "commands": [
       {
         "command": "extension.testCredentials",
@@ -47,17 +105,17 @@
       },
       {
         "command": "extension.pullAll",
-        "title": "Pull all QCP files from Salesforce",
+        "title": "Pull all QCP records from Salesforce",
         "category": "SFDC QCP"
       },
       {
         "command": "extension.pullRemote",
-        "title": "Pull remote file from Salesforce",
+        "title": "Pull remote records from Salesforce",
         "category": "SFDC QCP"
       },
       {
         "command": "extension.push",
-        "title": "Push file to Salesforce",
+        "title": "Push specified files to Salesforce",
         "category": "SFDC QCP"
       },
       {
@@ -68,6 +126,11 @@
       {
         "command": "extension.backup",
         "title": "Backup local or remote files",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.diff",
+        "title": "Compare Records and show differences",
         "category": "SFDC QCP"
       }
     ]
