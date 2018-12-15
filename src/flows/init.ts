@@ -1,14 +1,14 @@
 import { readdir, readFile, writeFile } from 'fs-extra';
 import * as _ from 'lodash';
 import { ExtensionContext, QuickPickItem, window, workspace } from 'vscode';
-import { GITIGNORE_CONTENTS, INPUT_OPTIONS, QP } from '../constants';
+import { GITIGNORE_CONTENTS, INPUT_OPTIONS, QP } from '../common/constants';
 import { OrgInfo, OrgType } from '../models';
-import { getPathWithFileName } from '../utils';
+import { getPathWithFileName } from '../common/utils';
 
 /**
  * Get credentials
  */
-export async function createConfig(orgInfo: OrgInfo): Promise<OrgInfo | undefined> {
+export async function initializeOrgs(orgInfo: OrgInfo): Promise<OrgInfo | undefined> {
   orgInfo = { ...orgInfo };
 
   const loginUrl = await getOrgType(orgInfo);
@@ -64,7 +64,7 @@ async function getOrgType(orgInfo: OrgInfo): Promise<string | undefined> {
   }
 }
 
-export async function createOrUpdateGitignore() {
+export async function createOrUpdateGitignore(): Promise<boolean> {
   const existingGitIgnore = (await workspace.findFiles('.gitignore', null, 1))[0];
   let fileToUpdateOrCreate: string = '';
   let filePath;
@@ -84,7 +84,9 @@ export async function createOrUpdateGitignore() {
   }
   if (fileToUpdateOrCreate) {
     await writeFile(filePath, fileToUpdateOrCreate);
+    return true;
   }
+  return false;
 }
 
 export async function getExampleFilesToPull(context: ExtensionContext): Promise<{ picked: string[]; all: string[] } | undefined> {

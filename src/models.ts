@@ -1,5 +1,9 @@
+export type StringOrUndefined = string | undefined;
+export type OrgType = 'Sandbox' | 'Developer' | 'Production' | 'Custom URL';
+export type LogEntryAction = 'push' | 'pull';
+export type LogEntryStatus = 'success' | 'error';
+
 export interface ConfigData {
-  pushOnSave: boolean;
   orgInfo: OrgInfo;
   files: CustomScriptFile[];
 }
@@ -16,9 +20,6 @@ export interface OrgInfo {
   password?: string;
   apiToken?: string;
 }
-
-export type StringOrUndefined = string | undefined;
-export type OrgType = 'Sandbox' | 'Developer' | 'Production' | 'Custom URL';
 
 export interface CustomScriptUpsert {
   Id?: string;
@@ -51,3 +52,16 @@ export interface CustomScriptBase {
 export interface CustomScript extends CustomScriptBase {
   SBQQ__Code__c: string;
 }
+
+export interface LogEntry {
+  action: LogEntryAction;
+  status: LogEntryStatus;
+  username?: string;
+  fileName?: string;
+  recordId?: string;
+  recordName?: string;
+  error?: string;
+  timestamp: string;
+}
+
+// Get orgInfo and store

@@ -44,8 +44,8 @@ This plugin comes with the following core features:
   - Pull all script files from Salesforce (this overwrites existing files with the same name)
 - `SFDC QCP: Pull remote file from Salesforce`
   - Pull specific file from remote, even if it does not exist locally (this overwrites existing files with the same name)
-- `SFDC QCP: Push file to Salesforce`
-  - Choose file to push to Salesforce, which will create or update record on Salesforce
+- `SFDC QCP: Push files to Salesforce`
+  - Choose one or more file sto push to Salesforce, which will create or update records in Salesforce
 - `SFDC QCP: Push all files to Salesforce`
   - Push all files in project to Salesforce. This will update records that are included in `.qcp/qcp-config.json` (because we know the Id) and will create all other records on Salesforce.
 - `SFDC QCP: Backup local or remote files`
@@ -53,6 +53,8 @@ This plugin comes with the following core features:
     - This will copy all files from `/src` to a new folder called `/{date}`
   - Remote
     - This will fetch all files from Salesforce and copy to a new folder called `/{date}`
+- `SFDC QCP: Compare Records and show differences`
+  - Shows differences between a file and a record.
 
 
 ### Project Initialization
@@ -68,6 +70,8 @@ are note submitted to source control.
 
 The initialization will also create a `README.md` and `tsconfig.json` if they don't already exist.
 
+Optionally, a `.prettierrc` file will be created during initialization. This can be configured in the extension settings.
+
 Upon initialization, you will be asked if you want to pull all the files from Salesforce and optionally include example files locally.
 
 ## Requirements
@@ -78,13 +82,35 @@ Upon initialization, you will be asked if you want to pull all the files from Sa
 
 ## Extension Settings
 
-None for now.
+- `sfdcQcp.pushOnSave` - When a file is saved, show prompt asking if file should be pushed to Salesforce
+- `sfdcQcp.prettier` - Determines if a .prettierrc file will be created on project initialization
+- `sfdcQcp.saveLog` - Determines if a log file should be saved each time a record from Salesforce is pushed or pulled
+- `sfdcQcp.maxLogEntries` - Determines the maximum number of entries in the log file.
 
 ## Known Issues
 
 No known issues.
 
 ## Release Notes
+
+### 0.2.0
+- Updated changelog file (#9)
+- Misc code cleanup
+- Pushing files now allows selecting multiple files instead of just one or all (#3)
+- When pulling files, a prompt with various actions is presented to the user before overwriting local records (#15)
+- Added a log file in the `.qcp` directory to show a history of what was pushed and pulled (#14)
+- Added ability to push files when they are saved, which includes a user confirmation. (#13)
+- Updated theme
+- Updated extension display name to `Salesforce CPQ - Quote Calculator Plugin`
+- On initialize, if an org is already configured, then there is an option to skip re-initializing the org and just re-create any config files
+- Added prettier configuration file creation with project initialization.
+- Added command to get diff from files or records
+- Added settings:
+  - `sfdcQcp.pushOnSave` - When a file is saved, show prompt asking if file should be pushed to Salesforce.
+  - `sfdcQcp.saveLog` - Determines if a log file should be saved each time a record from Salesforce is pushed or pulled.
+  - `sfdcQcp.maxLogEntries` - Determines the maximum number of entries in the log file.
+  - `sfdcQcp.prettier` - Determines if a .prettierrc file will be created on project initialization.
+  - `prettierConfig` - Default [prettier configuration](https://prettier.io/docs/en/configuration.html) object. You must edit this configuration in JSON mode.
 
 ### 0.1.1
 - Added additional information on getting started (#6)

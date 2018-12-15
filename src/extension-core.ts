@@ -1,17 +1,27 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace } from 'vscode';
-import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP } from './constants';
+import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, TextDocumentContentProvider } from 'vscode';
+import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP, SETTINGS } from './common/constants';
 import { backupFromRemote, backupLocal } from './flows/backup';
-import { createConfig, createOrUpdateGitignore, getExampleFilesToPull } from './flows/init';
+import { initializeOrgs, createOrUpdateGitignore, getExampleFilesToPull } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
-import { getFileToPush, pushFile } from './flows/push';
+import { getFilesToPush, pushFile } from './flows/push';
 import { ConfigData, StringOrUndefined } from './models';
-import { initConnection } from './sfdc-utils';
-import { copyExtensionFileToProject, fileExists, getAllSrcFiles, readAsJson, saveConfig } from './utils';
+import { initConnection } from './common/sfdc-utils';
+import {
+  copyExtensionFileToProject,
+  fileExists,
+  getAllSrcFiles,
+  readAsJson,
+  saveConfig,
+  writeFileAsJson,
+  getPathWithFileName,
+} from './common/utils';
+import * as fileLogger from './common/file-logger';
+import { compareLocalWithRemote, compareLocalFiles, compareRemoteRecords } from './flows/diff';
+import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
 
 export class QcpExtension {
   private configData: ConfigData = {
-    pushOnSave: false,
     orgInfo: {
       loginUrl: 'https://login.salesforce.com',
       username: '',
@@ -23,25 +33,34 @@ export class QcpExtension {
 
   conn: jsforce.Connection | undefined;
 
-  private context: ExtensionContext;
   private subscriptions: Disposable[];
 
-  constructor(context: ExtensionContext) {
-    this.context = context;
+  constructor(private context: ExtensionContext) {
     this.subscriptions = context.subscriptions;
     // Register
     this.registerListeners();
     this.initProject()
       .then(() => {
-        console.log('Project Initialized');
+        console.log('[INIT] Project Initialized');
+        this.registerProviders();
       })
       .catch(err => {
-        console.log('Error initializing', err);
+        console.log('[INIT] Error initializing', err);
       });
   }
 
   registerListeners() {
-    workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions);
+    this.context.subscriptions.push(workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions));
+  }
+
+  async registerProviders() {
+    try {
+      const conn = await initConnection(this.configData.orgInfo, this.conn);
+      const sfdcDocumentProvider = new SfdcTextDocumentProvider(conn);
+      this.context.subscriptions.push(workspace.registerTextDocumentContentProvider('sfdc', sfdcDocumentProvider));
+    } catch (ex) {
+      console.log('[PROVIDERS] Error registering providers');
+    }
   }
 
   async initProject(): Promise<void> {
@@ -49,7 +68,8 @@ export class QcpExtension {
       const existingConfig = (await workspace.findFiles(FILE_PATHS.CONFIG.target, null, 1))[0];
       if (existingConfig) {
         this.configData = readAsJson<ConfigData>(existingConfig.fsPath);
-        console.log('Project is SFDC QCP project.');
+        fileLogger.init();
+        console.log('[INIT] Project is SFDC QCP project.');
       }
     }
   }
@@ -90,26 +110,58 @@ export class QcpExtension {
     }
 
     /** Configure Connections */
-    try {
-      const orgInfo = await createConfig(this.configData.orgInfo);
-      if (orgInfo) {
-        this.configData.orgInfo = orgInfo;
-        await saveConfig(this.configData);
-      } else {
-        return;
+
+    let doInitOrgs = true;
+
+    if (this.configData.orgInfo.orgType && this.configData.orgInfo.username && this.configData.orgInfo.password) {
+      doInitOrgs = false;
+      const orgConfirm = await window.showQuickPick(INPUT_OPTIONS.INIT_ORG_CONFIRM());
+      doInitOrgs = orgConfirm && orgConfirm.label === QP.INIT_ORG_CONFIRM.YES ? true : false;
+    }
+
+    if (doInitOrgs) {
+      try {
+        const orgInfo = await initializeOrgs(this.configData.orgInfo);
+        if (orgInfo) {
+          this.configData.orgInfo = orgInfo;
+          await saveConfig(this.configData);
+        } else {
+          return;
+        }
+      } catch (ex) {
+        console.warn(ex);
+        return window.showErrorMessage(`Error initializing org: ${ex.message}`);
       }
-    } catch (ex) {
-      console.warn(ex);
-      return window.showErrorMessage(`Error creating configuration file: ${ex.message}`);
     }
 
     try {
       // This will ignore copying if the files do not already exist
-      await copyExtensionFileToProject(this.context, FILE_PATHS.README.src, FILE_PATHS.README.target);
-      await copyExtensionFileToProject(this.context, FILE_PATHS.TSCONFIG.src, FILE_PATHS.TSCONFIG.target);
-      // await copyFile(FILE_PATHS.README.target, FILE_PATHS.README.contents);
-      // await copyFile(FILE_PATHS.TSCONFIG.target, FILE_PATHS.TSCONFIG.contents);
-      await createOrUpdateGitignore();
+      const savedConfigFiles: string[] = [];
+      if (await copyExtensionFileToProject(this.context, FILE_PATHS.README.source, FILE_PATHS.README.target)) {
+        savedConfigFiles.push('README.md');
+      }
+      if (await copyExtensionFileToProject(this.context, FILE_PATHS.TSCONFIG.source, FILE_PATHS.TSCONFIG.target)) {
+        savedConfigFiles.push('tsconfig.json');
+      }
+      if (await createOrUpdateGitignore()) {
+        savedConfigFiles.push('.gitignore');
+      }
+      const prettier = workspace.getConfiguration(SETTINGS.NAMESPACE).get<boolean>(SETTINGS.ENTRIES.PRETTIER);
+      const prettierConfig = workspace.getConfiguration(SETTINGS.NAMESPACE).get<boolean>(SETTINGS.ENTRIES.PRETTIER_CONFIG);
+      if (prettier && prettierConfig) {
+        try {
+          if (!(await fileExists(FILE_PATHS.PRETTIER.target))) {
+            await writeFileAsJson(getPathWithFileName(FILE_PATHS.PRETTIER.target), prettierConfig);
+            savedConfigFiles.push('.prettierrc');
+          }
+        } catch (ex) {
+          return window.showErrorMessage(`Error initializing .prettierrc: ${ex.message}`);
+        }
+      }
+
+      if (savedConfigFiles.length > 0) {
+        window.showInformationMessage(`Created/Updated files: ${savedConfigFiles.join(', ')}.`);
+      }
     } catch (ex) {
       return window.showErrorMessage(`Error initializing project: ${ex.message}`);
     }
@@ -242,28 +294,49 @@ export class QcpExtension {
    * COMMAND: PUSH FILE
    * Allows user to specify a file to push to SFDC
    */
-  async pushFile() {
+  async pushFiles() {
     // TODO: either push current file or choose one (maybe default to active file)
     try {
-      const file = await getFileToPush();
-      if (file) {
+      const files = await getFilesToPush();
+      if (files) {
         window.withProgress(
           {
             location: ProgressLocation.Notification,
-            title: MESSAGES.PUSH.PROGRESS_ONE,
-            cancellable: false,
+            title: files.length > 1 ? MESSAGES.PUSH.PROGRESS_MULTI : MESSAGES.PUSH.PROGRESS_ONE,
+            cancellable: true,
           },
           async (progress, token) => {
-            try {
-              const updatedRecord = await pushFile(this.configData, file, this.conn);
-              if (updatedRecord) {
-                window.showInformationMessage(MESSAGES.PUSH.SUCCESS(updatedRecord.Name));
-              } else {
-                window.showErrorMessage(MESSAGES.PUSH.ERROR);
+            const total = files.length;
+            let increment = 100 / total;
+            let count = 0;
+
+            let updatedRecords = [];
+
+            for (let file of files) {
+              count++;
+              if (token.isCancellationRequested) {
+                break;
               }
-              // TODO: re-query record (maybe in pushFile)
-            } catch (ex) {
-              window.showErrorMessage(ex.message);
+              try {
+                const updatedRecord = await pushFile(this.configData, file, this.conn);
+                if (updatedRecord) {
+                  updatedRecords.push(updatedRecord);
+                } else {
+                  window.showErrorMessage(MESSAGES.PUSH.ERROR);
+                }
+                // TODO: re-query record (maybe in pushFile)
+              } catch (ex) {
+                window.showErrorMessage(ex.message);
+              }
+              progress.report({ increment, message: `Uploading file ${count} of ${total}` });
+            }
+
+            if (updatedRecords.length > 0) {
+              if (updatedRecords.length === 1) {
+                window.showInformationMessage(MESSAGES.PUSH.SUCCESS(updatedRecords[0].Name));
+              } else {
+                window.showInformationMessage(MESSAGES.PUSH.SUCCESS_COUNT(updatedRecords.length));
+              }
             }
           },
         );
@@ -289,18 +362,14 @@ export class QcpExtension {
             cancellable: true,
           },
           async (progress, token) => {
-            let doCancel = false;
-            token.onCancellationRequested(() => {
-              console.log('User canceled the long running operation');
-              doCancel = true;
-            });
             const existingFiles = await getAllSrcFiles();
             const total = existingFiles.length;
             let increment = 100 / total;
             let count = 0;
+
             for (const file of existingFiles) {
               count++;
-              if (doCancel) {
+              if (token.isCancellationRequested) {
                 window.showInformationMessage(`Remaining files cancelled`);
                 break;
               }
@@ -349,12 +418,50 @@ export class QcpExtension {
               }
             } catch (ex) {
               console.log(ex);
-              window.showErrorMessage(`Error buckup up files: ${ex.message}.`);
+              window.showErrorMessage(`Error backup up files: ${ex.message}.`);
             }
           },
         );
       }
     } catch (ex) {}
+  }
+
+  /**
+   * COMMAND: Compare
+   * Compares a local file with a remote record
+   */
+  async diff() {
+    try {
+      const pickedOption = await window.showQuickPick(INPUT_OPTIONS.COMPARE_CONFIRMATION());
+      if (pickedOption) {
+        // pick local file
+
+        switch (pickedOption.label) {
+          case QP.COMPARE_CONFIRMATION.LOCAL_WITH_REMOTE: {
+            await compareLocalWithRemote(true, this.configData, this.conn);
+            break;
+          }
+          case QP.COMPARE_CONFIRMATION.LOCAL_WITH_ANY_REMOTE: {
+            await compareLocalWithRemote(false, this.configData, this.conn);
+            break;
+          }
+          case QP.COMPARE_CONFIRMATION.LOCAL_FILES: {
+            await compareLocalFiles();
+            break;
+          }
+          case QP.COMPARE_CONFIRMATION.REMOTE_RECORDS: {
+            await compareRemoteRecords(this.configData, this.conn);
+            break;
+          }
+          default: {
+            break;
+          }
+        }
+      }
+    } catch (ex) {
+      console.log(ex);
+      window.showErrorMessage(`Error comparing files: ${ex.message}.`);
+    }
   }
 
   /**
@@ -373,6 +480,34 @@ export class QcpExtension {
     if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {
       this.configData = readAsJson<ConfigData>(ev.fileName);
       console.log('Config file updated');
+    }
+
+    let pushOnSave = workspace.getConfiguration(SETTINGS.NAMESPACE).get<boolean>(SETTINGS.ENTRIES.PUSH_ON_SAVE);
+
+    if (pushOnSave && ev.fileName.includes('/src/') && ev.fileName.endsWith('.ts')) {
+      const pickedItem = await window.showQuickPick(INPUT_OPTIONS.PUSH_ON_SAVE_CONFIRM(ev.fileName));
+      if (pickedItem && pickedItem.label === QP.PUSH_ON_SAVE_CONFIRM.YES) {
+        window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: MESSAGES.PUSH.PROGRESS_MULTI,
+            cancellable: true,
+          },
+          async (progress, token) => {
+            // ensure any code formatters can run first
+            try {
+              const updatedRecord = await pushFile(this.configData, ev.fileName, this.conn);
+              if (updatedRecord) {
+                window.showInformationMessage(MESSAGES.PUSH.SUCCESS(updatedRecord.Name));
+              } else {
+                window.showErrorMessage(`Error pushing file to Salesforce.`);
+              }
+            } catch (ex) {
+              window.showErrorMessage(`Error pushing file to Salesforce: ${ex.message}.`);
+            }
+          },
+        );
+      }
     }
   }
 }

@@ -1,9 +1,10 @@
 import { workspace, Uri, ExtensionContext } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';
-import { ConfigData, CustomScript } from './models';
+import { ConfigData, CustomScript, CustomScriptFile } from '../models';
 import { FILE_PATHS, REGEX } from './constants';
 import { getRecWithoutCode } from './sfdc-utils';
+import { createHash } from 'crypto';
 
 export function getPathWithFileName(fileOrFolderName: string) {
   return path.join(workspace.rootPath || '', fileOrFolderName);
@@ -28,6 +29,11 @@ export async function fileExists(fileName: string): Promise<boolean> {
 
 export async function getAllSrcFiles(max: number = 50): Promise<Uri[]> {
   const glob = `${FILE_PATHS.SRC}/*.ts`;
+  return await workspace.findFiles(glob, null, max);
+}
+
+export async function getSrcFile(fileName: string, max: number = 50): Promise<Uri[]> {
+  const glob = `${FILE_PATHS.SRC}/${fileName}`;
   return await workspace.findFiles(glob, null, max);
 }
 
@@ -68,9 +74,9 @@ export async function copyFile(
   targetFilename: string,
   contents: string,
   overwriteIfExists: boolean = false,
-  alredyFullPath: boolean = false,
+  alreadyFullPath: boolean = false,
 ): Promise<boolean> {
-  if (!alredyFullPath) {
+  if (!alreadyFullPath) {
     targetFilename = getPathWithFileName(targetFilename);
   }
   if (overwriteIfExists || !(await fileExists(targetFilename))) {
@@ -88,25 +94,35 @@ export async function copyFile(
   }
 }
 
-export async function copyExtensionFileToProject(context: ExtensionContext, src: string, dest: string, overwriteIfExists: boolean = false) {
+export async function copyExtensionFileToProject(
+  context: ExtensionContext,
+  src: string,
+  dest: string,
+  overwriteIfExists: boolean = false,
+): Promise<boolean> {
   const srcPath = context.asAbsolutePath(`extension-files/${src}`);
   const targetFilename = getPathWithFileName(dest);
   const exists = await fileExists(dest);
   if (overwriteIfExists || !exists) {
     await ensureFile(targetFilename);
     copyFileSync(srcPath, targetFilename);
+    return true;
   }
+  return false;
 }
 
-export async function saveRecordsToConfig(configData: ConfigData, records: CustomScript[]) {
+export async function saveRecordsToConfig(configData: ConfigData, records: CustomScript[]): Promise<CustomScriptFile[]> {
+  const files: CustomScriptFile[] = [];
   getRecWithoutCode(records).forEach(record => {
     const fileName = getPathWithFileName(`/src/${record.Name}.ts`);
     // if we already have a file with the same name, use it
     // TODO: what if filename was modified?
     const foundItem = configData.files.find(file => file.record.Id === record.Id);
     if (foundItem) {
+      files.push(foundItem);
       foundItem.record = record;
     } else {
+      files.push({ fileName: fileName, record });
       configData.files.push({
         fileName: fileName,
         record,
@@ -115,5 +131,19 @@ export async function saveRecordsToConfig(configData: ConfigData, records: Custo
   });
 
   await saveConfig(configData);
-  console.log('saved config');
+  return files;
+}
+
+export function isStringSame(str1: string, str2: string): boolean {
+  const hash1 = createHash('md5')
+    .update(str1)
+    .digest('hex');
+  const hash2 = createHash('md5')
+    .update(str2)
+    .digest('hex');
+  return hash1 === hash2;
+}
+
+export function getSfdcUri(recordId: string) {
+  return Uri.parse(`sfdc://sfdc/record#${recordId}`);
 }

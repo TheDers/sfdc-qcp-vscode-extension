@@ -1,6 +1,5 @@
 import { InputBoxOptions, QuickPickItem, Uri } from 'vscode';
-import { FILES } from './files';
-import { CustomScriptBase, CustomScriptFile } from './models';
+import { CustomScriptBase, CustomScriptFile } from '../models';
 
 /**
  * This file contains extension constants
@@ -12,7 +11,32 @@ export const REGEX = {
 
 // global settings keys
 export const SETTINGS = {
-  NAMESPACE: 'sfdc-qcp',
+  NAMESPACE: 'sfdcQcp',
+  ENTRIES: {
+    PUSH_ON_SAVE: 'pushOnSave',
+    PRETTIER: 'prettier',
+    SAVE_LOG: 'saveLog',
+    MAX_LOG_ENTRIES: 'maxLogEntries',
+    PRETTIER_CONFIG: 'prettierConfig',
+  },
+  DEFAULTS: {
+    PUSH_ON_SAVE: false,
+    PRETTIER: true,
+    SAVE_LOG: true,
+    MAX_LOG_ENTRIES: 150,
+    PRETTIER_CONFIG: {
+      printWidth: 140,
+      parser: 'typescript',
+      semi: true,
+      tabWidth: 2,
+      useTabs: false,
+      singleQuote: true,
+      trailingComma: 'all',
+      bracketSpacing: true,
+      arrowParens: 'avoid',
+      insertPragma: false,
+    },
+  },
 };
 
 export const GITIGNORE_CONTENTS = `
@@ -23,10 +47,14 @@ export const GITIGNORE_CONTENTS = `
 `;
 
 export const QP = {
+  INIT_ORG_CONFIRM: {
+    YES: 'Yes - Re-initialize org.',
+    NO: 'No - Use org that is currently configured.',
+  },
   INIT_QCP_EXAMPLE: {
-    EXAMPLE: 'Start with example QCP files',
-    PULL: 'Pull all QCP files from org',
-    EXAMPLE_AND_PULL: 'Pull all QCP files and create example QCP file',
+    EXAMPLE: 'Start with example QCP files.',
+    PULL: 'Pull all QCP files from org.',
+    EXAMPLE_AND_PULL: 'Pull all QCP files and create example QCP file.',
   },
   INIT_ORG_TYPE_QUICK_ITEM: {
     SANDBOX: 'Sandbox',
@@ -42,8 +70,27 @@ export const QP = {
     REMOTE: 'Remote - Fetch all files from remote and put into backup directory.',
   },
   PUSH_ALL_CONFIRM: {
-    YES: 'Yes - Push all files to Salesforce',
+    YES: 'Yes - Push all files to Salesforce.',
     NO: 'No - Get me outta here!',
+  },
+  PUSH_ON_SAVE_CONFIRM: {
+    YES: 'Yes - Push file to Salesforce.',
+    NO: 'Cancel',
+  },
+  OVERWRITE_CONFIRM: {
+    BACKUP: 'BACKUP - Backup local file before overwriting from Salesforce.',
+    OVERWRITE: 'Overwrite - Overwrite local file with the code from Salesforce.',
+    SKIP: 'Skip - Keep local file. (default)',
+    BACKUP_ALL: 'Backup All - Backup all files that would be overwritten from Salesforce.',
+    OVERWRITE_ALL: 'Overwrite All - Overwrite this file and any subsequent files.',
+    SKIP_ALL: 'Skip All - Keep all local files if the content on Salesforce is different.',
+    CANCEL: 'Cancel - Cancel operation. Any saved files will be kept, but all subsequent files will not be saved.',
+  },
+  COMPARE_CONFIRMATION: {
+    LOCAL_WITH_REMOTE: 'Compare a local file with the same remote record.',
+    LOCAL_WITH_ANY_REMOTE: 'Compare a local file with any remote record.',
+    LOCAL_FILES: 'Compare a local file with another local file.',
+    REMOTE_RECORDS: 'Compare a remote record with another remote record.',
   },
 };
 
@@ -62,7 +109,8 @@ export const MESSAGES = {
     PROGRESS_REMOTE_LIST: `Getting list of scripts from Salesforce.`,
   },
   PUSH: {
-    SUCCESS: (filename: string) => `Successfully pushed ${filename} to Salesforce.`,
+    SUCCESS: (recordName: string) => `Successfully pushed record ${recordName} to Salesforce.`,
+    SUCCESS_COUNT: (count: number) => `Successfully pushed ${count} records to Salesforce.`,
     ERROR: 'There was an error pushing this file to Salesforce.',
     PROGRESS_ONE: 'Pushing file to Salesforce.',
     PROGRESS_MULTI: 'Pushing files to Salesforce.',
@@ -71,9 +119,14 @@ export const MESSAGES = {
     IN_PROGRESS: (src: string) => `Backing up files from ${src}.`,
     SUCCESS: (src: string, folderName: string) => `Successfully backed up ${src} files to ${folderName}.`,
   },
+  COMPARE: {
+    SUCCESS: ``,
+    REMOTE_RECORD_NOT_FOUND: (recordId: string) => `Could not find record on salesforce with Id ${recordId}.`,
+  },
 };
 
 type INPUT_OPTIONS = {
+  INIT_ORG_CONFIRM: () => QuickPickItem[];
   INIT_USERNAME_INPUT: (currValue?: string) => InputBoxOptions;
   INIT_PASSWORD_INPUT: (currValue?: string) => InputBoxOptions;
   INIT_API_TOKEN_INPUT: (currValue?: string) => InputBoxOptions;
@@ -85,10 +138,14 @@ type INPUT_OPTIONS = {
   PULL_ONE_REMOTE_SHOW_FILE_LIST: (files: CustomScriptBase[]) => QuickPickItem[];
   PUSH_SHOW_FILE_LIST: (uris: Uri[]) => QuickPickItem[];
   PUSH_ALL_CONFIRM: () => QuickPickItem[];
+  PUSH_ON_SAVE_CONFIRM: (filename: string) => QuickPickItem[];
   BACKUP_CHOOSE_SRC: () => QuickPickItem[];
+  OVERWRITE_CONFIRM: (filename: string) => QuickPickItem[];
+  COMPARE_CONFIRMATION: () => QuickPickItem[];
 };
 
 export const INPUT_OPTIONS: INPUT_OPTIONS = {
+  INIT_ORG_CONFIRM: () => [{ label: QP.INIT_ORG_CONFIRM.YES }, { label: QP.INIT_ORG_CONFIRM.NO }],
   INIT_USERNAME_INPUT: (currValue?: string) => ({
     prompt: 'Enter salesforce org username of SFDC alias',
     ignoreFocusOut: true,
@@ -165,26 +222,50 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
     { label: QP.PUSH_ALL_CONFIRM.YES, picked: true, alwaysShow: true },
     { label: QP.PUSH_ALL_CONFIRM.NO, picked: false, alwaysShow: true },
   ],
+  PUSH_ON_SAVE_CONFIRM: (filename: string) => [
+    { label: QP.PUSH_ON_SAVE_CONFIRM.YES, detail: filename },
+    { label: QP.PUSH_ON_SAVE_CONFIRM.NO },
+  ],
   BACKUP_CHOOSE_SRC: () => [{ label: QP.BACKUP_CHOOSE_SRC.LOCAL, picked: true }, { label: QP.BACKUP_CHOOSE_SRC.REMOTE, picked: false }],
+  OVERWRITE_CONFIRM: (filename: string) => [
+    { label: QP.OVERWRITE_CONFIRM.BACKUP, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.OVERWRITE, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.SKIP, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.BACKUP_ALL, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.OVERWRITE_ALL, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.SKIP_ALL, detail: `Current File: ${filename}`, alwaysShow: true },
+    { label: QP.OVERWRITE_CONFIRM.CANCEL, detail: `Current File: ${filename}`, alwaysShow: true },
+  ],
+  COMPARE_CONFIRMATION: () => [
+    { label: QP.COMPARE_CONFIRMATION.LOCAL_WITH_REMOTE },
+    { label: QP.COMPARE_CONFIRMATION.LOCAL_WITH_ANY_REMOTE },
+    { label: QP.COMPARE_CONFIRMATION.LOCAL_FILES },
+    { label: QP.COMPARE_CONFIRMATION.REMOTE_RECORDS },
+  ],
 };
 
 export const FILE_PATHS = {
   CONFIG: {
     target: '.qcp/qcp-config.json',
   },
+  LOG: {
+    target: '.qcp/qcp-log.json',
+    backup: '.qcp/qcp-log.bak.json',
+  },
   README: {
-    contents: FILES.README,
-    src: 'README.md',
+    source: 'README.md',
     target: 'README.md',
   },
   TSCONFIG: {
-    contents: FILES.TSCONFIG,
-    src: 'tsconfig.json',
+    source: 'tsconfig.json',
     target: 'tsconfig.json',
   },
+  PRETTIER: {
+    source: 'prettierrc',
+    target: '.prettierrc',
+  },
   QCP: {
-    contents: FILES.QCP,
-    src: 'src/qcp-example.ts',
+    source: 'src/qcp-example.ts',
     target: 'src/qcp-example.ts',
   },
   SRC: 'src',
