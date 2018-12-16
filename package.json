@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with Salesforce CPQ Quote Calculator Plugin with an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "engines": {
     "vscode": "^1.29.0"
   },

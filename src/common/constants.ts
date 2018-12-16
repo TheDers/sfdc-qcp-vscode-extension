@@ -150,7 +150,7 @@ type INPUT_OPTIONS = {
 export const INPUT_OPTIONS: INPUT_OPTIONS = {
   INIT_ORG_CONFIRM: () => [{ label: QP.INIT_ORG_CONFIRM.YES }, { label: QP.INIT_ORG_CONFIRM.NO }],
   INIT_USERNAME_INPUT: (currValue?: string) => ({
-    prompt: 'Enter salesforce org username of SFDC alias',
+    prompt: 'Enter your Salesforce Username',
     ignoreFocusOut: true,
     value: currValue,
   }),
@@ -161,7 +161,7 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
     value: currValue,
   }),
   INIT_API_TOKEN_INPUT: (currValue?: string) => ({
-    prompt: 'Enter your API Token (Required if you IP address is not white listed)',
+    prompt: 'Enter your API Token (Required if your IP address is not white listed)',
     password: false,
     ignoreFocusOut: true,
     value: currValue,

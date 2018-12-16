@@ -1,5 +1,9 @@
 # Change Log
 
+### 0.2.4
+**12-16-2018**
+- Fixed typo with login text input.
+
 ### 0.2.3
 **12-16-2018**
 - Fixed type error in example `qcp-example-true-end-date-and-sub-term.ts`.
