@@ -17,7 +17,7 @@
     "QCP",
     "Quote Calculator Plugin"
   ],
-  "icon": "https://user-images.githubusercontent.com/5461649/50048986-489fba80-0097-11e9-978d-c6d8e99f7432.png",
+  "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#00A1DF",
     "theme": "dark"
