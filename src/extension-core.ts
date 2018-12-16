@@ -1,5 +1,5 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace } from 'vscode';
+import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, commands } from 'vscode';
 import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
 import { initConnection } from './common/sfdc-utils';
@@ -13,8 +13,8 @@ import {
   writeFileAsJson,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
-import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords } from './flows/diff';
-import { createOrUpdateGitignore, getExampleFilesToPull, initializeOrgs } from './flows/init';
+import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRemoteFile } from './flows/diff';
+import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
 import { ConfigData, StringOrUndefined } from './models';
@@ -196,7 +196,7 @@ export class QcpExtension {
    */
   async initExampleFiles() {
     try {
-      const output = await getExampleFilesToPull(this.context);
+      const output = await getExampleFilesToCreate(this.context);
       console.log('pickedFiles', output);
       if (output) {
         const { picked, all } = output;
@@ -457,6 +457,19 @@ export class QcpExtension {
             break;
           }
         }
+      }
+    } catch (ex) {
+      console.log(ex);
+      window.showErrorMessage(`Error comparing files: ${ex.message}.`);
+    }
+  }
+
+  async viewFromSalesforce() {
+    try {
+      const conn = await initConnection(this.configData.orgInfo, this.conn);
+      const remoteFile = await pickRemoteFile(conn);
+      if (remoteFile) {
+        await commands.executeCommand('vscode.open', remoteFile.uri);
       }
     } catch (ex) {
       console.log(ex);

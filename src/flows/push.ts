@@ -2,9 +2,9 @@ import { readFile } from 'fs-extra';
 import * as jsforce from 'jsforce';
 import * as path from 'path';
 import { window } from 'vscode';
-import { INPUT_OPTIONS } from '../common/constants';
+import { INPUT_OPTIONS, MESSAGES } from '../common/constants';
 import { ConfigData, CustomScriptUpsert, CustomScript } from '../models';
-import { initConnection, queryRecordsById } from '../common/sfdc-utils';
+import { initConnection, queryRecordsById, queryRecordsByName } from '../common/sfdc-utils';
 import { getAllSrcFiles, saveRecordsToConfig } from '../common/utils';
 import * as fileLogger from '../common/file-logger';
 
@@ -27,7 +27,7 @@ export async function pushFile(configData: ConfigData, fileName: string, conn?: 
   const SBQQ__Code__c = await readFile(fileName, 'UTF-8');
   // TODO: tsc() to ensure types are removed if they exist
   const Name = path.basename(fileName).replace('.ts', '');
-  const existingItem = configData.files.find(fileConfig => fileConfig.fileName === fileName);
+  let existingItem = configData.files.find(fileConfig => fileConfig.fileName === fileName);
 
   const record: CustomScriptUpsert = {
     Name,
@@ -35,6 +35,22 @@ export async function pushFile(configData: ConfigData, fileName: string, conn?: 
   };
 
   let results: jsforce.RecordResult;
+
+  if (!existingItem) {
+    // TODO: add better control over choosing which record to overwrite
+    // maybe show dialog with all files and make user choose which one to associate
+    // TODO: we should prompt the user with a dialog to ask them if we should overwrite the record on SFDC or not
+    const queriedRecordsByName = await queryRecordsByName(conn, record.Name, true);
+    if (queriedRecordsByName && queriedRecordsByName.length > 0) {
+      existingItem = {
+        fileName,
+        record: queriedRecordsByName[0],
+      };
+    }
+    if (queriedRecordsByName.length > 1) {
+      window.showWarningMessage(MESSAGES.PULL.MULTIPLE_REMOTE_RECORDS(record.Name));
+    }
+  }
 
   if (existingItem) {
     // existing item

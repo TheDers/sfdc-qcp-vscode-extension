@@ -89,7 +89,7 @@ export async function createOrUpdateGitignore(): Promise<boolean> {
   return false;
 }
 
-export async function getExampleFilesToPull(context: ExtensionContext): Promise<{ picked: string[]; all: string[] } | undefined> {
+export async function getExampleFilesToCreate(context: ExtensionContext): Promise<{ picked: string[]; all: string[] } | undefined> {
   const srcPath = context.asAbsolutePath(`extension-files/src`);
 
   const exampleFiles = await readdir(srcPath);

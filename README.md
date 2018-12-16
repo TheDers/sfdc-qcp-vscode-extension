@@ -4,7 +4,7 @@ This plugin improves the horrid developer experience for working with [Salesforc
 
 Say goodbye to copy-and-paste, say hello to VSCode!
 
-![image](https://user-images.githubusercontent.com/5461649/49703193-40d7a600-fbbf-11e8-91bb-3a471e9a3591.png)
+![image](images/commands.png)
 
 ## Important Details
 Locally, all files are saved as Typescript files, but there is no compilation so you will still need to write valid ES6 javascript instead.
@@ -54,8 +54,9 @@ This plugin comes with the following core features:
   - Remote
     - This will fetch all files from Salesforce and copy to a new folder called `/{date}`
 - `SFDC QCP: Compare Records and show differences`
-  - Shows differences between a file and a record.
-
+  - Shows differences between a file and a record
+- `SFDC QCP: Open QCP record from Salesforce`
+  - Opens a QCP record from Salesforce without saving the file locally
 
 ### Project Initialization
 **To get started, create a blank folder and open it with VSCode.**  You can use a folder with existing code if you want to.
@@ -93,18 +94,27 @@ No known issues.
 
 ## Release Notes
 
+### 0.2.1
+**12-15-2018**
+- Added extension icon.
+- Updated theme.
+- Updated extension description.
+- If a local file is created and pushed, and a record in Salesforce with the same name exists, that record will be used and overwritten.
+- Added command to view record in Salesforce without pulling the record data to a local file.
+
 ### 0.2.0
-- Updated changelog file (#9)
-- Misc code cleanup
-- Pushing files now allows selecting multiple files instead of just one or all (#3)
-- When pulling files, a prompt with various actions is presented to the user before overwriting local records (#15)
-- Added a log file in the `.qcp` directory to show a history of what was pushed and pulled (#14)
+**12-15-2018**
+- Updated changelog file. (#9)
+- Misc code cleanup.
+- Pushing files now allows selecting multiple files instead of just one or all. (#3)
+- When pulling files, a prompt with various actions is presented to the user before overwriting local records. (#15)
+- Added a log file in the `.qcp` directory to show a history of what was pushed and pulled. (#14)
 - Added ability to push files when they are saved, which includes a user confirmation. (#13)
-- Updated theme
-- Updated extension display name to `Salesforce CPQ - Quote Calculator Plugin`
-- On initialize, if an org is already configured, then there is an option to skip re-initializing the org and just re-create any config files
-- Added prettier configuration file creation with project initialization.
-- Added command to get diff from files or records
+- Updated background on the Marketplace. (#10)
+- Updated extension display name to `Salesforce CPQ - Quote Calculator Plugin`. (#10)
+- On initialize, if an org is already configured, then there is an option to skip re-initializing the org and just re-create any config files.
+- Added prettier configuration file creation with project initialization. (#11)
+- Added command to get diff from files or records.
 - Added settings:
   - `sfdcQcp.pushOnSave` - When a file is saved, show prompt asking if file should be pushed to Salesforce.
   - `sfdcQcp.saveLog` - Determines if a log file should be saved each time a record from Salesforce is pushed or pulled.
@@ -113,11 +123,13 @@ No known issues.
   - `prettierConfig` - Default [prettier configuration](https://prettier.io/docs/en/configuration.html) object. You must edit this configuration in JSON mode.
 
 ### 0.1.1
-- Added additional information on getting started (#6)
-- Fixed typo in README (#7)
+**12-09-2018**
+- Added additional information on getting started. (#6)
+- Fixed typo in README. (#7)
 
 ### 0.1.0
-- Initial release of the Plugin
+**12-08-2018**
+- Initial release of the Plugin.
 
 ## Contributing
 I plan to open source the project in the future, but until then, please ask questions on the [Extension Marketplace page for this extension](https://marketplace.visualstudio.com/items?itemName=paustint.sfdc-qcp-vscode-extension#qna).

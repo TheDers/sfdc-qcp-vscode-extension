@@ -74,6 +74,11 @@ export function activate(context: vscode.ExtensionContext) {
       qcp.diff();
     }),
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.viewFromSalesforce', () => {
+      qcp.viewFromSalesforce();
+    }),
+  );
 }
 
 // this method is called when your extension is deactivated
