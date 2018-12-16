@@ -26,8 +26,14 @@ export async function queryRecordsById(conn: jsforce.Connection, id: string): Pr
   return results.records;
 }
 
-export async function queryRecordsByName(conn: jsforce.Connection, name: string): Promise<CustomScript[]> {
-  const results = await conn.query<CustomScript>(QUERIES.BY_NAME_RECS(name));
+export async function queryRecordsByName(conn: jsforce.Connection, name: string, skipCode: boolean = false): Promise<CustomScript[]> {
+  const query = skipCode ? QUERIES.BY_NAME_RECS_NO_CODE(name) : QUERIES.BY_NAME_RECS(name);
+  const results = await conn.query<CustomScript>(query);
+  return results.records;
+}
+
+export async function queryRecordCountByName(conn: jsforce.Connection, name: string): Promise<number[]> {
+  const results = await conn.query<number>(QUERIES.BY_NAME_RECS_COUNT(name));
   return results.records;
 }
 

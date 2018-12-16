@@ -1,5 +1,5 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace } from 'vscode';
+import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, commands } from 'vscode';
 import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
 import { initConnection } from './common/sfdc-utils';
@@ -13,8 +13,8 @@ import {
   writeFileAsJson,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
-import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords } from './flows/diff';
-import { createOrUpdateGitignore, getExampleFilesToPull, initializeOrgs } from './flows/init';
+import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRemoteFile } from './flows/diff';
+import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
 import { ConfigData, StringOrUndefined } from './models';
@@ -35,14 +35,14 @@ export class QcpExtension {
 
   private subscriptions: Disposable[];
 
-  constructor(private context: ExtensionContext) {
+  constructor(private context: ExtensionContext, public sfdcDocumentProvider: SfdcTextDocumentProvider) {
     this.subscriptions = context.subscriptions;
     // Register
     this.registerListeners();
     this.initProject()
       .then(() => {
         console.log('[INIT] Project Initialized');
-        this.registerProviders();
+        this.addConnToDocumentProvider();
       })
       .catch(err => {
         console.log('[INIT] Error initializing', err);
@@ -53,11 +53,10 @@ export class QcpExtension {
     this.context.subscriptions.push(workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions));
   }
 
-  async registerProviders() {
+  async addConnToDocumentProvider() {
     try {
-      const conn = await initConnection(this.configData.orgInfo, this.conn);
-      const sfdcDocumentProvider = new SfdcTextDocumentProvider(conn);
-      this.context.subscriptions.push(workspace.registerTextDocumentContentProvider('sfdc', sfdcDocumentProvider));
+      this.conn = await initConnection(this.configData.orgInfo, this.conn);
+      this.sfdcDocumentProvider.updateConn(this.conn);
     } catch (ex) {
       console.log('[PROVIDERS] Error registering providers');
     }
@@ -125,6 +124,7 @@ export class QcpExtension {
         if (orgInfo) {
           this.configData.orgInfo = orgInfo;
           await saveConfig(this.configData);
+          this.addConnToDocumentProvider();
         } else {
           return;
         }
@@ -196,7 +196,7 @@ export class QcpExtension {
    */
   async initExampleFiles() {
     try {
-      const output = await getExampleFilesToPull(this.context);
+      const output = await getExampleFilesToCreate(this.context);
       console.log('pickedFiles', output);
       if (output) {
         const { picked, all } = output;
@@ -464,6 +464,19 @@ export class QcpExtension {
     }
   }
 
+  async viewFromSalesforce() {
+    try {
+      const conn = await initConnection(this.configData.orgInfo, this.conn);
+      const remoteFile = await pickRemoteFile(conn);
+      if (remoteFile) {
+        await commands.executeCommand('vscode.open', remoteFile.uri);
+      }
+    } catch (ex) {
+      console.log(ex);
+      window.showErrorMessage(`Error comparing files: ${ex.message}.`);
+    }
+  }
+
   /**
    *
    * EVENT LISTENERS
@@ -479,6 +492,7 @@ export class QcpExtension {
     // If user manually updated config, we need to know!
     if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {
       this.configData = readAsJson<ConfigData>(ev.fileName);
+      this.addConnToDocumentProvider();
       console.log('Config file updated');
     }
 

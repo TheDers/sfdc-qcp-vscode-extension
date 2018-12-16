@@ -4,7 +4,7 @@ This plugin improves the horrid developer experience for working with [Salesforc
 
 Say goodbye to copy-and-paste, say hello to VSCode!
 
-![image](https://user-images.githubusercontent.com/5461649/49703193-40d7a600-fbbf-11e8-91bb-3a471e9a3591.png)
+![commands](https://user-images.githubusercontent.com/5461649/50048985-45a4ca00-0097-11e9-9c39-5e1c3499f6ba.png)
 
 ## Important Details
 Locally, all files are saved as Typescript files, but there is no compilation so you will still need to write valid ES6 javascript instead.
@@ -38,7 +38,7 @@ This plugin comes with the following core features:
   - Create example files and pull all
 - `SFDC QCP: Create example QCP files in your project`
   - Choose one or more examples files to add to your project (this overwrites any existing files with the same name)
-- `SFDC QCP: Pull specified QCP file from SFDC`
+- `SFDC QCP: Pull specific QCP file from SFDC`
   - Refresh a specific file that already exists locally
 - `SFDC QCP: Pull all QCP files from Salesforce`
   - Pull all script files from Salesforce (this overwrites existing files with the same name)
@@ -54,13 +54,14 @@ This plugin comes with the following core features:
   - Remote
     - This will fetch all files from Salesforce and copy to a new folder called `/{date}`
 - `SFDC QCP: Compare Records and show differences`
-  - Shows differences between a file and a record.
-
+  - Shows differences between a file and a record
+- `SFDC QCP: Open QCP record from Salesforce`
+  - Opens a QCP record from Salesforce without saving the file locally
 
 ### Project Initialization
 **To get started, create a blank folder and open it with VSCode.**  You can use a folder with existing code if you want to.
 
-Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`.
+Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`.  All other options will be hidden until the project is initialized.
 
 When you initialize a new project, You will be required to enter your org type, username, password, and API token (if needed).
 Your credential will be stored (in plain text for now) in a file named `.qcp/qcp-config.json`.
@@ -93,31 +94,9 @@ No known issues.
 
 ## Release Notes
 
-### 0.2.0
-- Updated changelog file (#9)
-- Misc code cleanup
-- Pushing files now allows selecting multiple files instead of just one or all (#3)
-- When pulling files, a prompt with various actions is presented to the user before overwriting local records (#15)
-- Added a log file in the `.qcp` directory to show a history of what was pushed and pulled (#14)
-- Added ability to push files when they are saved, which includes a user confirmation. (#13)
-- Updated theme
-- Updated extension display name to `Salesforce CPQ - Quote Calculator Plugin`
-- On initialize, if an org is already configured, then there is an option to skip re-initializing the org and just re-create any config files
-- Added prettier configuration file creation with project initialization.
-- Added command to get diff from files or records
-- Added settings:
-  - `sfdcQcp.pushOnSave` - When a file is saved, show prompt asking if file should be pushed to Salesforce.
-  - `sfdcQcp.saveLog` - Determines if a log file should be saved each time a record from Salesforce is pushed or pulled.
-  - `sfdcQcp.maxLogEntries` - Determines the maximum number of entries in the log file.
-  - `sfdcQcp.prettier` - Determines if a .prettierrc file will be created on project initialization.
-  - `prettierConfig` - Default [prettier configuration](https://prettier.io/docs/en/configuration.html) object. You must edit this configuration in JSON mode.
+Check out my [Medium article](https://medium.com/@paustint/getting-started-with-the-salesforce-cpq-quote-calculator-plugin-vscode-extension-718306ff40d4) on using the extension.
 
-### 0.1.1
-- Added additional information on getting started (#6)
-- Fixed typo in README (#7)
-
-### 0.1.0
-- Initial release of the Plugin
+See changes in Changelog.
 
 ## Contributing
 I plan to open source the project in the future, but until then, please ask questions on the [Extension Marketplace page for this extension](https://marketplace.visualstudio.com/items?itemName=paustint.sfdc-qcp-vscode-extension#qna).

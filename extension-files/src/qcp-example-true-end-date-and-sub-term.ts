@@ -41,7 +41,7 @@ function calculateEndDate(quote, line) {
   if (sd != null && ed == null) {
     ed = sd;
     ed.setUTCMonth(ed.getUTCMonth() + getEffectiveSubscriptionTerm(quote, line));
-    ed.setUTCDate(d.getUTCDate() - 1);
+    ed.setUTCDate(ed.getUTCDate() - 1);
   }
   return ed;
 }

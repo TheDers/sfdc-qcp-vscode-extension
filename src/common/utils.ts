@@ -145,5 +145,5 @@ export function isStringSame(str1: string, str2: string): boolean {
 }
 
 export function getSfdcUri(recordId: string) {
-  return Uri.parse(`sfdc://sfdc/record#${recordId}`);
+  return Uri.parse(`sfdc://sfdc/record/${recordId}.ts#${recordId}`);
 }

@@ -5,7 +5,11 @@ import { queryRecordsById } from '../common/sfdc-utils';
 export class SfdcTextDocumentProvider implements TextDocumentContentProvider {
   private _onDidChange = new EventEmitter<Uri>();
 
-  constructor(private conn: jsforce.Connection) {}
+  private conn: jsforce.Connection;
+
+  constructor() {
+    this.conn = new jsforce.Connection({});
+  }
 
   public async provideTextDocumentContent(uri: Uri): Promise<string> {
     const records = await queryRecordsById(this.conn, uri.fragment);
@@ -13,6 +17,10 @@ export class SfdcTextDocumentProvider implements TextDocumentContentProvider {
       return records[0].SBQQ__Code__c;
     }
     throw new Error(`A record with Id ${uri.path} was not found on Salesforce.`);
+  }
+
+  public updateConn(conn: jsforce.Connection) {
+    this.conn = conn;
   }
 
   get onDidChange(): Event<Uri> {

@@ -3,26 +3,25 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { QcpExtension } from './extension-core';
+import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
+
+const SFDC_QCP_PROJECT_ACTIVE = 'sfdcQcp:projectActive';
+
+function setCommandVisibility(enable: boolean) {
+  vscode.commands.executeCommand('setContext', SFDC_QCP_PROJECT_ACTIVE, enable);
+}
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  setCommandVisibility(true);
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "sfdc-qcp-vscode-extension" is now active!');
 
-  const qcp = new QcpExtension(context);
+  const sfdcDocumentProvider = new SfdcTextDocumentProvider();
+  const qcp = new QcpExtension(context, sfdcDocumentProvider);
 
-  // IDEAS:
-  /**
-   * 1) download a list of:
-   * quote, quote line, product, product option fields with name, label and type
-   * as a text file (or CSV) to allow the user to easily find the data
-   *
-   * 2) figure out how to support typescript with type interfaces
-   * This changes the entire backup process because the files on SFDC will not have type information
-   *
-   */
+  context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('sfdc', qcp.sfdcDocumentProvider));
 
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.testCredentials', () => {
@@ -74,7 +73,14 @@ export function activate(context: vscode.ExtensionContext) {
       qcp.diff();
     }),
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.viewFromSalesforce', () => {
+      qcp.viewFromSalesforce();
+    }),
+  );
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  setCommandVisibility(false);
+}

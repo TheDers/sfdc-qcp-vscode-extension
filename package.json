@@ -1,9 +1,9 @@
 {
   "name": "sfdc-qcp-vscode-extension",
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
-  "description": "Work with Salesforce CPQ Quote Calculator Plugin records without opening Salesforce.",
+  "description": "Work with Salesforce CPQ Quote Calculator Plugin with an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "engines": {
     "vscode": "^1.29.0"
   },
@@ -17,9 +17,10 @@
     "QCP",
     "Quote Calculator Plugin"
   ],
+  "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#00A1DF",
-    "theme": "light"
+    "theme": "dark"
   },
   "activationEvents": [
     "workspaceContains:.qcp/qcp-config.json",
@@ -32,7 +33,8 @@
     "onCommand:extension.push",
     "onCommand:extension.pushAll",
     "onCommand:extension.backup",
-    "onCommand:extension.diff"
+    "onCommand:extension.diff",
+    "onCommand:extension.viewFromSalesforce"
   ],
   "main": "./out/extension",
   "contributes": {
@@ -100,7 +102,7 @@
       },
       {
         "command": "extension.pull",
-        "title": "Pull specified QCP file from SFDC",
+        "title": "Pull specific QCP file from SFDC",
         "category": "SFDC QCP"
       },
       {
@@ -132,8 +134,57 @@
         "command": "extension.diff",
         "title": "Compare Records and show differences",
         "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.viewFromSalesforce",
+        "title": "Open QCP record from Salesforce",
+        "category": "SFDC QCP"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "extension.testCredentials",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.initExampleFiles",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pull",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pullAll",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pullRemote",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.push",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pushAll",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.backup",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.diff",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.viewFromSalesforce",
+          "when": "sfdcQcp:projectActive"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

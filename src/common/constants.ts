@@ -107,6 +107,9 @@ export const MESSAGES = {
     PROGRESS_ALL: 'Downloading all QCP files from Salesforce.',
     PROGRESS_ONE: (file: string) => `Downloading ${file} from Salesforce.`,
     PROGRESS_REMOTE_LIST: `Getting list of scripts from Salesforce.`,
+    MULTIPLE_REMOTE_RECORDS: (name: string) =>
+      `There are multiple records on Salesforce named "${name}"` +
+      ', you should rename or delete these duplicate records from Salesforce and locally.',
   },
   PUSH: {
     SUCCESS: (recordName: string) => `Successfully pushed record ${recordName} to Salesforce.`,
@@ -281,4 +284,6 @@ export const QUERIES = {
   ALL_RECS: () => `SELECT ${QUERY_FIELDS_ALL} FROM SBQQ__CustomScript__c`,
   BY_ID_RECS: (id: string) => `SELECT ${QUERY_FIELDS_ALL} FROM SBQQ__CustomScript__c WHERE Id = '${id}'`,
   BY_NAME_RECS: (name: string) => `SELECT ${QUERY_FIELDS_ALL} FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
+  BY_NAME_RECS_NO_CODE: (name: string) => `SELECT ${QUERY_FIELDS_WO_CODE} FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
+  BY_NAME_RECS_COUNT: (name: string) => `SELECT count() FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
 };

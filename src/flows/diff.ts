@@ -17,7 +17,7 @@ async function getFileToCompare(skipFile?: string): Promise<string | undefined> 
   }
 }
 
-async function pickRemoteFile(
+export async function pickRemoteFile(
   conn: jsforce.Connection,
   existingRecs?: CustomScriptBase[],
   skipRecordId?: string,
