@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with Salesforce CPQ Quote Calculator Plugin with an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "engines": {
     "vscode": "^1.29.0"
   },
@@ -102,7 +102,7 @@
       },
       {
         "command": "extension.pull",
-        "title": "Pull specified QCP file from SFDC",
+        "title": "Pull specific QCP file from SFDC",
         "category": "SFDC QCP"
       },
       {
@@ -140,7 +140,51 @@
         "title": "Open QCP record from Salesforce",
         "category": "SFDC QCP"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "extension.testCredentials",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.initExampleFiles",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pull",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pullAll",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pullRemote",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.push",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pushAll",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.backup",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.diff",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.viewFromSalesforce",
+          "when": "sfdcQcp:projectActive"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

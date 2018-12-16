@@ -1,6 +1,11 @@
 # Change Log
 
-### [Unreleased]
+### 0.2.3
+**12-16-2018**
+- Fixed type error in example `qcp-example-true-end-date-and-sub-term.ts`.
+- Fixed bug with invalid credentials with viewing unsaved records from Salesforce.
+- Initialize project is the only shown menu option for projects that do not have the qcp configuration file in the workspace.
+- Published [blog article](https://medium.com/@paustint/getting-started-with-the-salesforce-cpq-quote-calculator-plugin-vscode-extension-718306ff40d4).
 
 ### 0.2.2
 **12-15-2018**

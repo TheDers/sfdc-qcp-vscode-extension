@@ -35,14 +35,14 @@ export class QcpExtension {
 
   private subscriptions: Disposable[];
 
-  constructor(private context: ExtensionContext) {
+  constructor(private context: ExtensionContext, public sfdcDocumentProvider: SfdcTextDocumentProvider) {
     this.subscriptions = context.subscriptions;
     // Register
     this.registerListeners();
     this.initProject()
       .then(() => {
         console.log('[INIT] Project Initialized');
-        this.registerProviders();
+        this.addConnToDocumentProvider();
       })
       .catch(err => {
         console.log('[INIT] Error initializing', err);
@@ -53,11 +53,10 @@ export class QcpExtension {
     this.context.subscriptions.push(workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions));
   }
 
-  async registerProviders() {
+  async addConnToDocumentProvider() {
     try {
-      const conn = await initConnection(this.configData.orgInfo, this.conn);
-      const sfdcDocumentProvider = new SfdcTextDocumentProvider(conn);
-      this.context.subscriptions.push(workspace.registerTextDocumentContentProvider('sfdc', sfdcDocumentProvider));
+      this.conn = await initConnection(this.configData.orgInfo, this.conn);
+      this.sfdcDocumentProvider.updateConn(this.conn);
     } catch (ex) {
       console.log('[PROVIDERS] Error registering providers');
     }
@@ -125,6 +124,7 @@ export class QcpExtension {
         if (orgInfo) {
           this.configData.orgInfo = orgInfo;
           await saveConfig(this.configData);
+          this.addConnToDocumentProvider();
         } else {
           return;
         }
@@ -492,6 +492,7 @@ export class QcpExtension {
     // If user manually updated config, we need to know!
     if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {
       this.configData = readAsJson<ConfigData>(ev.fileName);
+      this.addConnToDocumentProvider();
       console.log('Config file updated');
     }
 

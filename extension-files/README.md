@@ -15,7 +15,7 @@ All files will be stored in the `/src` folder and will be saved with a `.ts` ext
   - Create example files and pull all
 - `SFDC QCP: Create example QCP files in your project`
   - Choose one or more examples files to add to your project (this overwrites any existing files with the same name)
-- `SFDC QCP: Pull specified QCP file from SFDC`
+- `SFDC QCP: Pull specific QCP file from SFDC`
   - Refresh a specific file that already exists locally
 - `SFDC QCP: Pull all QCP files from Salesforce`
   - Pull all script files from Salesforce (this overwrites existing files with the same name)
