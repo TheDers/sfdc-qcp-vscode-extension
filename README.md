@@ -94,6 +94,10 @@ No known issues.
 
 ## Release Notes
 
+### 0.2.2
+**12-15-2018**
+- Modified extension icon.
+
 ### 0.2.1
 **12-15-2018**
 - Added extension icon.
