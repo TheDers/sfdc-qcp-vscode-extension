@@ -4,7 +4,7 @@ This plugin improves the horrid developer experience for working with [Salesforc
 
 Say goodbye to copy-and-paste, say hello to VSCode!
 
-![image](images/commands.png)
+![commands](https://user-images.githubusercontent.com/5461649/50048985-45a4ca00-0097-11e9-9c39-5e1c3499f6ba.png)
 
 ## Important Details
 Locally, all files are saved as Typescript files, but there is no compilation so you will still need to write valid ES6 javascript instead.
