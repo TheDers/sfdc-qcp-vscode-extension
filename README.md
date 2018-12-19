@@ -90,7 +90,7 @@ Upon initialization, you will be asked if you want to pull all the files from Sa
 
 ## Known Issues
 
-No known issues.
+[View issues on GitHub](https://github.com/atginfo/sfdc-qcp-vscode-extension/issues).
 
 ## Release Notes
 
