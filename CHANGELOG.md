@@ -1,5 +1,11 @@
 # Change Log
 
+### 0.3.0
+**12-19-2018**
+- Open sourced project.
+- Added license.
+- Added repository information.
+
 ### 0.2.4
 **12-16-2018**
 - Fixed typo with login text input.

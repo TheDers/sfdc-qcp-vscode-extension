@@ -1,6 +1,6 @@
 # sfdc-qcp-vscode-extension README
 
-This plugin improves the horrid developer experience for working with [Salesforce QCP Quote Calculator Plugin](https://developer.salesforce.com/docs/atlas.en-us.cpq_dev_plugins.meta/cpq_dev_plugins/cpq_plugins_parent.htm) scripts.
+This plugin improves the developer experience when working with [Salesforce QCP Quote Calculator Plugin](https://developer.salesforce.com/docs/atlas.en-us.cpq_dev_plugins.meta/cpq_dev_plugins/cpq_plugins_parent.htm) scripts.
 
 Say goodbye to copy-and-paste, say hello to VSCode!
 
@@ -99,4 +99,4 @@ Check out my [Medium article](https://medium.com/@paustint/getting-started-with-
 See changes in Changelog.
 
 ## Contributing
-I plan to open source the project in the future, but until then, please ask questions on the [Extension Marketplace page for this extension](https://marketplace.visualstudio.com/items?itemName=paustint.sfdc-qcp-vscode-extension#qna).
+Contributions of all kinds will be considered. https://github.com/atginfo/sfdc-qcp-vscode-extension
