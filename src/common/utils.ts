@@ -1,17 +1,64 @@
-import { workspace, Uri, ExtensionContext } from 'vscode';
+import { workspace, Uri, ExtensionContext, OutputChannel } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';
-import { ConfigData, CustomScript, CustomScriptFile } from '../models';
-import { FILE_PATHS, REGEX } from './constants';
+import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted, OrgInfo } from '../models';
+import { FILE_PATHS, REGEX, IV_LENGTH } from './constants';
 import { getRecWithoutCode } from './sfdc-utils';
-import { createHash } from 'crypto';
+import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+
+let _encryptionKey: string;
+
+export function setEncryptionKey(key: string): string {
+  _encryptionKey = key;
+  return key;
+}
 
 export function getPathWithFileName(fileOrFolderName: string) {
   return path.join(workspace.rootPath || '', fileOrFolderName);
 }
 
-export function saveConfig(configData: ConfigData) {
-  return writeFileAsJson(getPathWithFileName(FILE_PATHS.CONFIG.target), configData);
+/**
+ * Read configuration data from object, and decrypt if needed
+ * This handles both encrypted and non-encrypted versions of the saved data
+ * this allows for conversion of old projects to new projects (and possible setting in the future to allow folks to opt-out of encryption)
+ * This can also perform any transformations as needed if the config model changes over time
+ */
+export async function readConfig(configData: ConfigData | ConfigDataEncrypted): Promise<ConfigData> {
+  let newConfigData: ConfigData = {
+    files: configData.files,
+    orgInfo: {},
+  };
+  if (isEncryptedOrgInfo(configData)) {
+    try {
+      const orgInfo: OrgInfo = JSON.parse(decrypt(configData.orgInfo));
+      newConfigData = {
+        files: configData.files,
+        orgInfo,
+      };
+      newConfigData.orgInfo = orgInfo;
+    } catch (ex) {
+      console.error('Error decrypting orgInfo');
+    }
+  } else {
+    newConfigData.orgInfo = configData.orgInfo;
+  }
+  if (newConfigData.orgInfo && (newConfigData.orgInfo as any).username) {
+    delete (newConfigData.orgInfo as any).username;
+    delete (newConfigData.orgInfo as any).password;
+    delete (newConfigData.orgInfo as any).apiToken;
+  }
+  return newConfigData;
+}
+
+/**
+ * Save configuration data - the data saved to disk is encrypted
+ */
+export async function saveConfig(configData: ConfigData) {
+  const configDataEncrypted: ConfigDataEncrypted = {
+    orgInfo: encrypt(JSON.stringify(configData.orgInfo)),
+    files: configData.files,
+  };
+  return writeFileAsJson(getPathWithFileName(FILE_PATHS.CONFIG.target), configDataEncrypted);
 }
 
 export function readAsJson<T>(path: string): T {
@@ -146,4 +193,52 @@ export function isStringSame(str1: string, str2: string): boolean {
 
 export function getSfdcUri(recordId: string) {
   return Uri.parse(`sfdc://sfdc/record/${recordId}.ts#${recordId}`);
+}
+
+export function parameterize(data: any = {}): string {
+  return Object.keys(data)
+    .map(key => `${key}=${encodeURIComponent(data[key])}`)
+    .join('&');
+}
+
+export function generateEncryptionKey(): string {
+  return randomBytes(16).toString('hex');
+}
+
+export function encrypt(value: string) {
+  let iv = randomBytes(IV_LENGTH);
+  let cipher = createCipheriv('aes-256-cbc', new Buffer(_encryptionKey), iv);
+  let encrypted = cipher.update(value as any);
+
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+export function decrypt(value: string) {
+  let textParts = value.split(':');
+  let iv = new Buffer(textParts.shift() as string, 'hex');
+  let encryptedText = new Buffer(textParts.join(':'), 'hex');
+  let decipher = createDecipheriv('aes-256-cbc', new Buffer(_encryptionKey), iv);
+  let decrypted = decipher.update(encryptedText);
+
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+  return decrypted.toString();
+}
+
+export function isEncryptedOrgInfo(orgData: any): orgData is ConfigDataEncrypted {
+  return typeof orgData.orgInfo === 'string';
+}
+
+export function logRecords(outputChannel: OutputChannel, title: string, records: (CustomScript | string)[]) {
+  const header = `\n******************** ${title} ********************`;
+  outputChannel.appendLine(header);
+  records.forEach(rec => {
+    if (typeof rec === 'string') {
+      outputChannel.appendLine(`- ${rec}`);
+    } else {
+      outputChannel.appendLine(`- ${rec.Name} (${rec.Id})`);
+    }
+  });
 }

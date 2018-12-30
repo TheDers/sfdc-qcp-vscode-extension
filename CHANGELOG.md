@@ -1,5 +1,16 @@
 # Change Log
 
+### 0.2.5
+[UNRELEASED]
+- When credentials were updated, the in-memory version was not updated if prior credentials were valid (#25)
+- Updated login process to use OAuth instead of username+password (#4)
+  - User is redirected to login page in web browser, and is redirected back to the application
+  - Credentials are then stored locally using an access and refresh token
+  - When the token expired, a new token us automatically obtained
+  - Added encryption to credentials to avoid storing in plaintext
+    - The generated encryption key is unique for each workspace
+- Added logging output to the output console to allow users to keep track of session history (#29)
+
 ### 0.3.0
 **12-19-2018**
 - Open sourced project.
