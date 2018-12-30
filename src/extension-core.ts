@@ -1,6 +1,6 @@
 import * as jsforce from 'jsforce';
-import { commands, Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, OutputChannel } from 'vscode';
-import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, QP, SETTINGS, OUTPUT_PANEL_NAME } from './common/constants';
+import { commands, Disposable, ExtensionContext, OutputChannel, ProgressLocation, TextDocument, window, workspace } from 'vscode';
+import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, OUTPUT_PANEL_NAME, QP, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
 import { initConnection, onConnChange } from './common/sfdc-utils';
 import {
@@ -9,19 +9,19 @@ import {
   generateEncryptionKey,
   getAllSrcFiles,
   getPathWithFileName,
+  logRecords,
   readAsJson,
   readConfig,
   saveConfig,
   setEncryptionKey,
   writeFileAsJson,
-  logRecords,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
 import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRemoteFile } from './flows/diff';
 import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
-import { ConfigData, ConfigDataEncrypted, StringOrUndefined, CustomScript } from './models';
+import { ConfigData, ConfigDataEncrypted, StringOrUndefined } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
 
 export let outputChannel: OutputChannel;
