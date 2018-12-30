@@ -4,6 +4,7 @@
 import * as vscode from 'vscode';
 import { QcpExtension } from './extension-core';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
+import { SfdcAuthProtocolHandler } from './providers/uri-provider';
 
 const SFDC_QCP_PROJECT_ACTIVE = 'sfdcQcp:projectActive';
 
@@ -15,6 +16,7 @@ function setCommandVisibility(enable: boolean) {
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   setCommandVisibility(true);
+
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
 
@@ -22,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   const qcp = new QcpExtension(context, sfdcDocumentProvider);
 
   context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('sfdc', qcp.sfdcDocumentProvider));
+  context.subscriptions.push(vscode.window.registerUriHandler(new SfdcAuthProtocolHandler()));
 
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.testCredentials', () => {

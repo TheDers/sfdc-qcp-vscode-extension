@@ -216,6 +216,7 @@
     "vscode": "^1.1.25"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "fs-extra": "^7.0.1",
     "jsforce": "^1.9.1",
     "sanitize-filename": "^1.6.1"

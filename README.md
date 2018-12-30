@@ -13,9 +13,9 @@ The reason for this is because there are may times when someone else changes the
 impossible to pull the Javascript from SFDC and then turn that back into TypeScript.
 
 In the future, it would be nice to have a "TypeScript mode" where the developers can truly be in bliss with TypeScript for development,
-but that also means that the developer should never pull files down from SFDC, as they would be the JavaScript equivalent.
+but that also means that the developer should never pull files down from SFDC, because Salesforce only knows about the JavaScript version of the file.
 
-Your credentials will be stored as plaintext within a file in the created `.qcp` directory, but the extension creates or updates your `.gitignore` file to ensure this does not get committed to source control.
+Your org information is encrypted with a unique key per workspace and is stored as an encrypted value in the `.qcp` directory and the extension creates or updates your `.gitignore` file to ensure this file does not get committed to source control. Even if it is committed to source control it will not work on other computers as the encryption key is stored locally on your computer related to the specific workspace.
 
 ## Features
 
@@ -63,8 +63,8 @@ This plugin comes with the following core features:
 
 Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`.  All other options will be hidden until the project is initialized.
 
-When you initialize a new project, You will be required to enter your org type, username, password, and API token (if needed).
-Your credential will be stored (in plain text for now) in a file named `.qcp/qcp-config.json`.
+When you initialize a new project, You will be redirected to Salesforce to login using OAuth, and be redirected back to VSCode.
+Your authentication information will be stored in this file `.qcp/qcp-config.json`.
 
 A `.gitignore` file will be created if one does not already exist and an entry for `.qcp` will be added to the file to ensure your credentials
 are note submitted to source control.

@@ -1,15 +1,19 @@
 import * as jsforce from 'jsforce';
-import { Disposable, ExtensionContext, ProgressLocation, TextDocument, window, workspace, commands } from 'vscode';
-import { FILE_PATHS, INPUT_OPTIONS, MESSAGES, QP, SETTINGS } from './common/constants';
+import { commands, Disposable, ExtensionContext, OutputChannel, ProgressLocation, TextDocument, window, workspace } from 'vscode';
+import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, OUTPUT_PANEL_NAME, QP, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
-import { initConnection } from './common/sfdc-utils';
+import { initConnection, onConnChange } from './common/sfdc-utils';
 import {
   copyExtensionFileToProject,
   fileExists,
+  generateEncryptionKey,
   getAllSrcFiles,
   getPathWithFileName,
+  logRecords,
   readAsJson,
+  readConfig,
   saveConfig,
+  setEncryptionKey,
   writeFileAsJson,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
@@ -17,17 +21,14 @@ import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRe
 import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
-import { ConfigData, StringOrUndefined } from './models';
+import { ConfigData, ConfigDataEncrypted, StringOrUndefined } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
+
+export let outputChannel: OutputChannel;
 
 export class QcpExtension {
   private configData: ConfigData = {
-    orgInfo: {
-      loginUrl: 'https://login.salesforce.com',
-      username: '',
-      password: '',
-      apiToken: '',
-    },
+    orgInfo: {},
     files: [],
   };
 
@@ -37,6 +38,22 @@ export class QcpExtension {
 
   constructor(private context: ExtensionContext, public sfdcDocumentProvider: SfdcTextDocumentProvider) {
     this.subscriptions = context.subscriptions;
+    outputChannel = window.createOutputChannel(OUTPUT_PANEL_NAME);
+
+    onConnChange.event((conn: jsforce.Connection | undefined) => {
+      this.conn = conn;
+
+      if (this.conn) {
+        this.conn.on('refresh', async accessToken => {
+          console.log('[AUTH] Token refreshed');
+          if (this.configData.orgInfo.authInfo) {
+            this.configData.orgInfo.authInfo.access_token = accessToken;
+            await saveConfig(this.configData);
+          }
+        });
+      }
+    });
+
     // Register
     this.registerListeners();
     this.initProject()
@@ -62,12 +79,27 @@ export class QcpExtension {
     }
   }
 
+  async getOrCreateEncryptionKey(): Promise<string> {
+    let encryptionKey: string = this.context.workspaceState.get(MEMONTO_KEYS.ENC_KEY) || '';
+    if (!encryptionKey) {
+      encryptionKey = generateEncryptionKey();
+      await this.context.workspaceState.update(MEMONTO_KEYS.ENC_KEY, encryptionKey);
+    }
+    setEncryptionKey(encryptionKey);
+    return encryptionKey;
+  }
+
   async initProject(): Promise<void> {
     if (workspace.name && workspace.rootPath) {
+      await this.getOrCreateEncryptionKey();
       const existingConfig = (await workspace.findFiles(FILE_PATHS.CONFIG.target, null, 1))[0];
       if (existingConfig) {
-        this.configData = readAsJson<ConfigData>(existingConfig.fsPath);
+        this.configData = await readConfig(readAsJson<ConfigData | ConfigDataEncrypted>(existingConfig.fsPath));
         fileLogger.init();
+        if (this.configData.orgInfo.authInfo) {
+          this.testCredentials();
+        }
+        await saveConfig(this.configData);
         console.log('[INIT] Project is SFDC QCP project.');
       }
     }
@@ -86,8 +118,9 @@ export class QcpExtension {
    */
   async testCredentials(): Promise<boolean> {
     try {
-      await initConnection(this.configData.orgInfo, this.conn);
+      await initConnection(this.configData.orgInfo, this.conn, true);
       window.showInformationMessage(MESSAGES.INIT.ORG_VALID);
+      outputChannel.appendLine(`Credentials are valid for org ${this.configData.orgInfo.username}.`);
       return true;
     } catch (ex) {
       const action = await window.showErrorMessage(MESSAGES.INIT.ORG_INVALID, 'Re-Initialize');
@@ -112,7 +145,9 @@ export class QcpExtension {
 
     let doInitOrgs = true;
 
-    if (this.configData.orgInfo.orgType && this.configData.orgInfo.username && this.configData.orgInfo.password) {
+    // TODO: check if user needs to be authenticated
+
+    if (this.configData.orgInfo.authInfo) {
       doInitOrgs = false;
       const orgConfirm = await window.showQuickPick(INPUT_OPTIONS.INIT_ORG_CONFIRM());
       doInitOrgs = orgConfirm && orgConfirm.label === QP.INIT_ORG_CONFIRM.YES ? true : false;
@@ -121,16 +156,19 @@ export class QcpExtension {
     if (doInitOrgs) {
       try {
         const orgInfo = await initializeOrgs(this.configData.orgInfo);
+        this.conn = undefined;
         if (orgInfo) {
           this.configData.orgInfo = orgInfo;
           await saveConfig(this.configData);
+          this.conn = await initConnection(this.configData.orgInfo, this.conn);
           this.addConnToDocumentProvider();
+          outputChannel.appendLine(`Successfully authenticated org ${this.configData.orgInfo.username}`);
         } else {
           return;
         }
       } catch (ex) {
         console.warn(ex);
-        return window.showErrorMessage(`Error initializing org: ${ex.message}`);
+        return window.showErrorMessage(`Error initializing org: ${ex.message}.`);
       }
     }
 
@@ -161,8 +199,10 @@ export class QcpExtension {
 
       if (savedConfigFiles.length > 0) {
         window.showInformationMessage(`Created/Updated files: ${savedConfigFiles.join(', ')}.`);
+        outputChannel.appendLine(`Created/Updated files: ${savedConfigFiles.join(', ')}.`);
       }
     } catch (ex) {
+      outputChannel.appendLine(`Error initializing project: ${ex.message}.`);
       return window.showErrorMessage(`Error initializing project: ${ex.message}`);
     }
 
@@ -197,7 +237,6 @@ export class QcpExtension {
   async initExampleFiles() {
     try {
       const output = await getExampleFilesToCreate(this.context);
-      console.log('pickedFiles', output);
       if (output) {
         const { picked, all } = output;
         let filesToCopy = picked;
@@ -209,6 +248,7 @@ export class QcpExtension {
             await copyExtensionFileToProject(this.context, `src/${file}`, `src/${file}`, true);
             window.showInformationMessage(MESSAGES.INIT.EXAMPLE_FILES_COPIED);
           }
+          outputChannel.appendLine(`Created example files ${filesToCopy.join(', ')}.`);
         }
       }
     } catch (ex) {
@@ -234,6 +274,7 @@ export class QcpExtension {
         try {
           const records = await queryFilesAndSave(this.configData, { conn: this.conn });
           window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+          logRecords(outputChannel, 'Pulled Records', records);
           return;
         } catch (ex) {
           window.showErrorMessage(ex.message, { modal: true });
@@ -261,6 +302,7 @@ export class QcpExtension {
             try {
               const records = await queryFilesAndSave(this.configData, { conn: this.conn, customScriptFile, clearFileData: false });
               window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+              logRecords(outputChannel, 'Pulled Records', records);
               return;
             } catch (ex) {
               window.showErrorMessage(ex.message, { modal: true });
@@ -283,6 +325,7 @@ export class QcpExtension {
       const records = await getRemoteFiles(this.configData, this.conn);
       if (records) {
         window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+        logRecords(outputChannel, 'Pulled Records', records);
       }
     } catch (ex) {
       console.log('Error pulling remove file', ex);
@@ -337,6 +380,7 @@ export class QcpExtension {
               } else {
                 window.showInformationMessage(MESSAGES.PUSH.SUCCESS_COUNT(updatedRecords.length));
               }
+              logRecords(outputChannel, 'Pushed Records', updatedRecords);
             }
           },
         );
@@ -367,6 +411,8 @@ export class QcpExtension {
             let increment = 100 / total;
             let count = 0;
 
+            outputChannel.appendLine('\n******************** Pushed Files ********************');
+
             for (const file of existingFiles) {
               count++;
               if (token.isCancellationRequested) {
@@ -376,9 +422,11 @@ export class QcpExtension {
               try {
                 const record = await pushFile(this.configData, file.fsPath, this.conn);
                 if (record) {
+                  outputChannel.appendLine(`- [SUCCESS] ${record.Name} (${record.Id})`);
                   window.showInformationMessage(`Successfully pushed ${record.Name}.`);
                 }
               } catch (ex) {
+                outputChannel.appendLine(`- [FAILURE] ${file.path} (${ex.message})`);
                 window.showErrorMessage(`Error uploading file: ${ex.message}.`);
               } finally {
                 progress.report({ increment, message: `Uploading file ${count} of ${total}` });
@@ -412,13 +460,16 @@ export class QcpExtension {
               if (isLocal) {
                 const folderName = await backupLocal();
                 window.showInformationMessage(MESSAGES.BACKUP.SUCCESS('local', folderName));
+                outputChannel.appendLine(`Backed up local files to folder ${folderName}`);
               } else {
                 const folderName = await backupFromRemote(this.configData, this.conn);
                 window.showInformationMessage(MESSAGES.BACKUP.SUCCESS('remote', folderName));
+                outputChannel.appendLine(`Backed up remote records to folder ${folderName}`);
               }
             } catch (ex) {
               console.log(ex);
               window.showErrorMessage(`Error backup up files: ${ex.message}.`);
+              outputChannel.appendLine(`Error backup up files: ${ex.message}.`);
             }
           },
         );
@@ -488,10 +539,10 @@ export class QcpExtension {
    * When the config file is manually modified, the contents is re-read into the configuration in memory
    */
   async onSave(ev: TextDocument) {
-    // TODO: on save, look at settings and figure out if action is needed
-    // If user manually updated config, we need to know!
+    // If user manually updated config, we need to update in-memory configuration
     if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {
-      this.configData = readAsJson<ConfigData>(ev.fileName);
+      this.configData = await readConfig(readAsJson<ConfigData | ConfigDataEncrypted>(ev.fileName));
+      this.conn = undefined;
       this.addConnToDocumentProvider();
       console.log('Config file updated');
     }
@@ -513,6 +564,7 @@ export class QcpExtension {
               const updatedRecord = await pushFile(this.configData, ev.fileName, this.conn);
               if (updatedRecord) {
                 window.showInformationMessage(MESSAGES.PUSH.SUCCESS(updatedRecord.Name));
+                logRecords(outputChannel, 'Pushed File', [updatedRecord]);
               } else {
                 window.showErrorMessage(`Error pushing file to Salesforce.`);
               }

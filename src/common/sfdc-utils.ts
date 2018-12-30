@@ -1,14 +1,83 @@
 import * as jsforce from 'jsforce';
-import { OrgInfo, CustomScript, CustomScriptBase } from '../models';
+import { commands, Uri, EventEmitter } from 'vscode';
+import { AUTH_HTTP, client_id } from '../common/constants';
+import { CustomScript, CustomScriptBase, OrgInfo, SfdcAuthDeviceCodeResponseSuccess, SfdcAuthDeviceResponseError } from '../models';
+import { getOnDidAuthEvent } from '../providers/uri-provider';
 import { QUERIES } from './constants';
 
-export async function initConnection(orgInfo: OrgInfo, conn?: jsforce.Connection): Promise<jsforce.Connection> {
+export const onConnChange = new EventEmitter<jsforce.Connection | undefined>();
+
+export function authenticateUser(domain: string): Promise<SfdcAuthDeviceCodeResponseSuccess> {
+  return new Promise((resolve, reject) => {
+    // Open OAuth window
+    commands.executeCommand('vscode.open', Uri.parse(AUTH_HTTP.getUserAgentAuth.url(domain)));
+
+    // Listen for redirect
+    getOnDidAuthEvent().event((data: SfdcAuthDeviceCodeResponseSuccess | SfdcAuthDeviceResponseError) => {
+      console.log('[AUTH] callback called', data);
+      if (isErrorResponse(data)) {
+        reject(data);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+}
+
+function isErrorResponse(val: any): val is SfdcAuthDeviceResponseError {
+  return val.error ? true : false;
+}
+
+export async function initConnection(
+  orgInfo: OrgInfo,
+  conn?: jsforce.Connection,
+  testIfValid: boolean = false,
+): Promise<jsforce.Connection> {
   if (conn) {
+    if (testIfValid) {
+      if (!(await testValidCredentials(conn, orgInfo))) {
+        onConnChange.fire(undefined);
+        throw new Error('Authentication is invalid, please re-authenticate');
+      }
+    }
     return conn;
   }
-  conn = new jsforce.Connection({ loginUrl: orgInfo.loginUrl });
-  await conn.login(orgInfo.username || '', `${orgInfo.password}${orgInfo.apiToken || ''}`);
-  return conn;
+
+  if (orgInfo.authInfo) {
+    conn = new jsforce.Connection({
+      oauth2: {
+        clientId: client_id,
+        redirectUri: AUTH_HTTP.getUserAgentAuth.url(orgInfo.loginUrl as string),
+        loginUrl: orgInfo.loginUrl,
+      },
+      instanceUrl: orgInfo.authInfo.instance_url,
+      accessToken: orgInfo.authInfo.access_token,
+      refreshToken: orgInfo.authInfo.refresh_token,
+    });
+    if (testIfValid && !(await testValidCredentials(conn, orgInfo))) {
+      onConnChange.fire(undefined);
+      throw new Error('Authentication is invalid, please re-authenticate');
+    }
+    onConnChange.fire(conn);
+    return conn;
+  } else {
+    onConnChange.fire(undefined);
+    throw new Error('Authentication is invalid, please re-authenticate');
+  }
+}
+
+export async function testValidCredentials(conn: jsforce.Connection, orgInfo: OrgInfo): Promise<boolean> {
+  if (!orgInfo.authInfo) {
+    return false;
+  } else {
+    try {
+      const userInfo: any = await conn.request({ method: 'GET', url: orgInfo.authInfo.id });
+      orgInfo.username = userInfo.username;
+      return true;
+    } catch (ex) {
+      return false;
+    }
+  }
 }
 
 export async function queryAllRecords(conn: jsforce.Connection): Promise<CustomScript[]> {

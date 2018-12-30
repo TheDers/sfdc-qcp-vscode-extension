@@ -1,12 +1,20 @@
 import { InputBoxOptions, QuickPickItem, Uri } from 'vscode';
-import { CustomScriptBase, CustomScriptFile } from '../models';
+import { CustomScriptBase, CustomScriptFile, AuthHttp } from '../models';
+import { parameterize } from './utils';
 
 /**
  * This file contains extension constants
  */
 
+export const IV_LENGTH = 16; // For AES, this is always 16
+export const OUTPUT_PANEL_NAME = 'SFDC QCP';
+export const MEMONTO_KEYS = {
+  ENC_KEY: 'ENC_KEY',
+};
+
 export const REGEX = {
   ENDS_WITH_DASH_NUM: /-\d+$/,
+  ANY_CHAR: /./gi,
 };
 
 // global settings keys
@@ -188,13 +196,16 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
       picked: currValue === QP.INIT_ORG_TYPE_QUICK_ITEM.CUSTOM,
     },
   ],
-  INIT_ORG_TYPE_CUSTOM_INPUT: (currValue?: string) => ({
-    ignoreFocusOut: true,
-    placeHolder: '',
-    prompt: 'Custom URL',
-    value: currValue || 'https://domain.my.salesforce.com',
-    valueSelection: [8, 14],
-  }),
+  INIT_ORG_TYPE_CUSTOM_INPUT: (currValue?: string) => {
+    const value = currValue || 'https://domain.my.salesforce.com';
+    return {
+      ignoreFocusOut: true,
+      placeHolder: '',
+      prompt: 'Custom URL',
+      value,
+      valueSelection: [8, value.indexOf('.my') || 14],
+    };
+  },
   INIT_QCP_EXAMPLE: () => [
     { label: QP.INIT_QCP_EXAMPLE.EXAMPLE, picked: true, alwaysShow: true },
     { label: QP.INIT_QCP_EXAMPLE.PULL, picked: false, alwaysShow: true },
@@ -286,4 +297,21 @@ export const QUERIES = {
   BY_NAME_RECS: (name: string) => `SELECT ${QUERY_FIELDS_ALL} FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
   BY_NAME_RECS_NO_CODE: (name: string) => `SELECT ${QUERY_FIELDS_WO_CODE} FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
   BY_NAME_RECS_COUNT: (name: string) => `SELECT count() FROM SBQQ__CustomScript__c WHERE Name = '${name}'`,
+};
+
+export const client_id = '3MVG9KsVczVNcM8yH1pNeimwzaNciPgPq5lCmYI32we9ERWVHCx.vFaFRs9ejsGSHDoWyb8RGInzZJjAHJsQa';
+
+export const AUTH_HTTP: AuthHttp = {
+  getUserAgentAuth: {
+    url: (domain: string) => {
+      const params = parameterize({
+        response_type: `token`,
+        client_id,
+        scope: `api refresh_token`,
+        redirect_uri: 'vscode%3A%2F%2Fpaustint.sfdc-qcp-vscode-extension%2Fauth_callback',
+        prompt: 'login',
+      });
+      return `${domain}/services/oauth2/authorize?${params}`;
+    },
+  },
 };

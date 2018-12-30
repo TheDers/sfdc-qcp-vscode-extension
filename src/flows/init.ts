@@ -4,6 +4,8 @@ import { ExtensionContext, QuickPickItem, window, workspace } from 'vscode';
 import { GITIGNORE_CONTENTS, INPUT_OPTIONS, QP } from '../common/constants';
 import { OrgInfo, OrgType } from '../models';
 import { getPathWithFileName } from '../common/utils';
+import { authenticateUser } from '../common/sfdc-utils';
+import axios from 'axios';
 
 /**
  * Get credentials
@@ -17,27 +19,18 @@ export async function initializeOrgs(orgInfo: OrgInfo): Promise<OrgInfo | undefi
   }
   orgInfo.loginUrl = loginUrl;
 
-  const username = await window.showInputBox(INPUT_OPTIONS.INIT_USERNAME_INPUT(orgInfo.username));
-  if (_.isNil(username)) {
-    return;
-  }
-  if (orgInfo.username !== username) {
-    orgInfo.password = '';
-    orgInfo.apiToken = '';
-  }
-  orgInfo.username = username;
+  const authInfo = await authenticateUser(loginUrl);
 
-  const password = await window.showInputBox(INPUT_OPTIONS.INIT_PASSWORD_INPUT(orgInfo.password));
-  if (_.isNil(password)) {
-    return;
+  try {
+    const response = await axios.get(authInfo.id, {
+      headers: { Authorization: `Bearer ${authInfo.access_token}` },
+    });
+    orgInfo.username = response.data.username;
+  } catch (ex) {
+    console.warn('Error getting username', ex);
   }
-  orgInfo.password = password;
 
-  const apiToken = await window.showInputBox(INPUT_OPTIONS.INIT_API_TOKEN_INPUT(orgInfo.apiToken));
-  if (_.isNil(apiToken)) {
-    return;
-  }
-  orgInfo.apiToken = apiToken;
+  orgInfo.authInfo = authInfo;
 
   return orgInfo;
 }
@@ -48,17 +41,12 @@ export async function initializeOrgs(orgInfo: OrgInfo): Promise<OrgInfo | undefi
 async function getOrgType(orgInfo: OrgInfo): Promise<string | undefined> {
   const items: QuickPickItem[] = INPUT_OPTIONS.INIT_ORG_TYPE_QUICK_ITEM(orgInfo.orgType);
 
-  const preSelectedItem = items.find(item => item.label === orgInfo.orgType);
-  if (preSelectedItem) {
-    preSelectedItem.picked = true;
-  }
-
   const pickedItem = await window.showQuickPick(items, { canPickMany: false, ignoreFocusOut: true });
 
   if (pickedItem) {
     orgInfo.orgType = pickedItem.label as OrgType;
     if (pickedItem.label === QP.INIT_ORG_TYPE_QUICK_ITEM.CUSTOM) {
-      return await window.showInputBox(INPUT_OPTIONS.INIT_ORG_TYPE_CUSTOM_INPUT(orgInfo.username));
+      return await window.showInputBox(INPUT_OPTIONS.INIT_ORG_TYPE_CUSTOM_INPUT(orgInfo.loginUrl));
     }
     return pickedItem.description;
   }
