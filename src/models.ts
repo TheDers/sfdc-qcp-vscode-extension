@@ -9,7 +9,7 @@ export interface ConfigData {
 }
 
 export interface ConfigDataEncrypted {
-  orgInfo: string;
+  orgInfo: OrgInfoEncrypted;
   files: CustomScriptFile[];
 }
 
@@ -24,6 +24,14 @@ export interface OrgInfo {
   loginUrl?: string;
   username?: string;
   authInfo?: SfdcAuthDeviceCodeResponseSuccess;
+}
+
+export interface OrgInfoEncrypted {
+  orgId: string;
+  orgType: OrgType;
+  loginUrl: string;
+  username: string;
+  authInfo: string;
 }
 
 export interface CustomScriptUpsert {

@@ -1,8 +1,8 @@
 import * as jsforce from 'jsforce';
-import { commands, Disposable, ExtensionContext, OutputChannel, ProgressLocation, TextDocument, window, workspace } from 'vscode';
+import { commands, Disposable, ExtensionContext, OutputChannel, ProgressLocation, TextDocument, window, workspace, Uri } from 'vscode';
 import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, OUTPUT_PANEL_NAME, QP, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
-import { initConnection, onConnChange } from './common/sfdc-utils';
+import { initConnection, onConnChange, onAuthInfoChange, deleteRecord } from './common/sfdc-utils';
 import {
   copyExtensionFileToProject,
   fileExists,
@@ -21,7 +21,7 @@ import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRe
 import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
 import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
-import { ConfigData, ConfigDataEncrypted, StringOrUndefined } from './models';
+import { ConfigData, ConfigDataEncrypted, StringOrUndefined, OrgInfo, CustomScriptFile } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
 
 export let outputChannel: OutputChannel;
@@ -40,6 +40,15 @@ export class QcpExtension {
     this.subscriptions = context.subscriptions;
     outputChannel = window.createOutputChannel(OUTPUT_PANEL_NAME);
 
+    onAuthInfoChange.event((orgInfo: OrgInfo) => {
+      this.configData.orgInfo = orgInfo;
+      try {
+        saveConfig(this.configData);
+      } catch (ex) {
+        console.log('[AUTH] Error saving orgInfo', ex.message);
+      }
+    });
+
     onConnChange.event((conn: jsforce.Connection | undefined) => {
       this.conn = conn;
 
@@ -48,7 +57,11 @@ export class QcpExtension {
           console.log('[AUTH] Token refreshed');
           if (this.configData.orgInfo.authInfo) {
             this.configData.orgInfo.authInfo.access_token = accessToken;
-            await saveConfig(this.configData);
+            try {
+              saveConfig(this.configData);
+            } catch (ex) {
+              console.log('[AUTH] Error saving orgInfo', ex.message);
+            }
           }
         });
       }
@@ -68,6 +81,8 @@ export class QcpExtension {
 
   registerListeners() {
     this.context.subscriptions.push(workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions));
+    const fsWatcher = workspace.createFileSystemWatcher('**/src/*.ts', true, true, false);
+    this.context.subscriptions.push(fsWatcher.onDidDelete(this.onDelete, this, this.subscriptions));
   }
 
   async addConnToDocumentProvider() {
@@ -573,6 +588,42 @@ export class QcpExtension {
             }
           },
         );
+      }
+    }
+  }
+
+  async onDelete(ev: Uri) {
+    if (this.configData) {
+      const matchingFileIdx = this.configData.files.findIndex(file => file.fileName === ev.fsPath);
+      if (matchingFileIdx > -1) {
+        const deletedFile: CustomScriptFile = this.configData.files[matchingFileIdx];
+        this.configData.files.splice(matchingFileIdx, 1);
+        const pickedItem = await window.showQuickPick(
+          INPUT_OPTIONS.DELETE_REMOTE_ON_DELETE_CONFIRM(deletedFile.record.Id, deletedFile.fileName),
+        );
+        if (pickedItem && pickedItem.label === QP.DELETE_REMOTE_ON_DELETE_CONFIRM.YES) {
+          // delete remote
+          try {
+            const conn = await initConnection(this.configData.orgInfo, this.conn);
+            const success = await deleteRecord(conn, deletedFile.record.Id);
+            if (success) {
+              window.showInformationMessage(MESSAGES.DELETE.DELETE_REMOTE_ON_DELETE_SUCCESS(deletedFile.record.Id));
+              logRecords(outputChannel, 'Deleted Records', [`${deletedFile.record.Name} (${deletedFile.record.Id})`]);
+            } else {
+              window.showInformationMessage(MESSAGES.DELETE.DELETE_REMOTE_ON_DELETE_FAIL(deletedFile.record.Id));
+              outputChannel.appendLine(`Error deleting record ${deletedFile.record.Id} from Salesforce.`);
+            }
+          } catch (ex) {
+            window.showErrorMessage(`Error deleting record from Salesforce Salesforce: ${ex.message}.`);
+            outputChannel.appendLine(`Error deleting record ${deletedFile.record.Id} from Salesforce. ${ex.message}.`);
+          }
+        }
+        // Update config with removed file
+        try {
+          await saveConfig(this.configData);
+        } catch (ex) {
+          console.warn('Error saving config data');
+        }
       }
     }
   }

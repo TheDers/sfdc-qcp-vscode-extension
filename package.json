@@ -98,7 +98,7 @@
     "commands": [
       {
         "command": "extension.testCredentials",
-        "title": "Test org credentials",
+        "title": "Validate org credentials are valid",
         "category": "SFDC QCP"
       },
       {

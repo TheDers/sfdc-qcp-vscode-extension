@@ -12,6 +12,8 @@ export const MEMONTO_KEYS = {
   ENC_KEY: 'ENC_KEY',
 };
 
+export const CUSTOM_SCRIPT_API_NAME = 'SBQQ__CustomScript__c';
+
 export const REGEX = {
   ENDS_WITH_DASH_NUM: /-\d+$/,
   ANY_CHAR: /./gi,
@@ -85,6 +87,10 @@ export const QP = {
     YES: 'Yes - Push file to Salesforce.',
     NO: 'Cancel',
   },
+  DELETE_REMOTE_ON_DELETE_CONFIRM: {
+    YES: 'Yes - Also remove record from Salesforce.',
+    NO: 'No - Keep record that exists on Salesforce.',
+  },
   OVERWRITE_CONFIRM: {
     BACKUP: 'BACKUP - Backup local file before overwriting from Salesforce.',
     OVERWRITE: 'Overwrite - Overwrite local file with the code from Salesforce.',
@@ -126,6 +132,11 @@ export const MESSAGES = {
     PROGRESS_ONE: 'Pushing file to Salesforce.',
     PROGRESS_MULTI: 'Pushing files to Salesforce.',
   },
+  DELETE: {
+    DELETE_REMOTE_ON_DELETE_SUCCESS: (recordId: string) => `Record ${recordId} successfully deleted from Salesforce.`,
+    DELETE_REMOTE_ON_DELETE_FAIL: (recordId: string) =>
+      `There was an error attempting to delete record ${recordId} the record from Salesforce.`,
+  },
   BACKUP: {
     IN_PROGRESS: (src: string) => `Backing up files from ${src}.`,
     SUCCESS: (src: string, folderName: string) => `Successfully backed up ${src} files to ${folderName}.`,
@@ -150,6 +161,7 @@ type INPUT_OPTIONS = {
   PUSH_SHOW_FILE_LIST: (uris: Uri[]) => QuickPickItem[];
   PUSH_ALL_CONFIRM: () => QuickPickItem[];
   PUSH_ON_SAVE_CONFIRM: (filename: string) => QuickPickItem[];
+  DELETE_REMOTE_ON_DELETE_CONFIRM: (recordId: string, filename: string) => QuickPickItem[];
   BACKUP_CHOOSE_SRC: () => QuickPickItem[];
   OVERWRITE_CONFIRM: (filename: string) => QuickPickItem[];
   COMPARE_CONFIRMATION: () => QuickPickItem[];
@@ -239,6 +251,10 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
   PUSH_ON_SAVE_CONFIRM: (filename: string) => [
     { label: QP.PUSH_ON_SAVE_CONFIRM.YES, detail: filename },
     { label: QP.PUSH_ON_SAVE_CONFIRM.NO },
+  ],
+  DELETE_REMOTE_ON_DELETE_CONFIRM: (recordId: string, filename: string) => [
+    { label: QP.DELETE_REMOTE_ON_DELETE_CONFIRM.YES, description: recordId, detail: filename },
+    { label: QP.DELETE_REMOTE_ON_DELETE_CONFIRM.NO },
   ],
   BACKUP_CHOOSE_SRC: () => [{ label: QP.BACKUP_CHOOSE_SRC.LOCAL, picked: true }, { label: QP.BACKUP_CHOOSE_SRC.REMOTE, picked: false }],
   OVERWRITE_CONFIRM: (filename: string) => [

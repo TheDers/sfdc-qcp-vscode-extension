@@ -1,6 +1,6 @@
 # Change Log
 
-### 0.2.5
+### 0.4.0
 [UNRELEASED]
 - When credentials were updated, the in-memory version was not updated if prior credentials were valid (#25)
 - Updated login process to use OAuth instead of username+password (#4)
@@ -10,6 +10,7 @@
   - Added encryption to credentials to avoid storing in plaintext
     - The generated encryption key is unique for each workspace
 - Added logging output to the output console to allow users to keep track of session history (#29)
+- When a file is deleted locally, a prompt is shown to provide the option to also delete from Salesforce.
 
 ### 0.3.0
 **12-19-2018**
