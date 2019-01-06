@@ -30,8 +30,8 @@ This plugin comes with the following core features:
 - Backup all remote files to directory
 
 ### Available Commands
-- `SFDC QCP: Test org credentials`
-  - Confirm org is valid
+- `SFDC QCP: Validate org credentials are valid`
+  - Confirm credentials for org are valid
 - `SFDC QCP: Initialize Project`
   - Create all project files as needed
   - Re-enter credentials for org

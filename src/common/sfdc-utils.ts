@@ -1,11 +1,13 @@
 import * as jsforce from 'jsforce';
 import { commands, Uri, EventEmitter } from 'vscode';
-import { AUTH_HTTP, client_id } from '../common/constants';
+import { AUTH_HTTP, client_id, CUSTOM_SCRIPT_API_NAME } from '../common/constants';
 import { CustomScript, CustomScriptBase, OrgInfo, SfdcAuthDeviceCodeResponseSuccess, SfdcAuthDeviceResponseError } from '../models';
 import { getOnDidAuthEvent } from '../providers/uri-provider';
 import { QUERIES } from './constants';
+import { SuccessResult, ErrorResult } from 'jsforce';
 
 export const onConnChange = new EventEmitter<jsforce.Connection | undefined>();
+export const onAuthInfoChange = new EventEmitter<OrgInfo>();
 
 export function authenticateUser(domain: string): Promise<SfdcAuthDeviceCodeResponseSuccess> {
   return new Promise((resolve, reject) => {
@@ -71,8 +73,13 @@ export async function testValidCredentials(conn: jsforce.Connection, orgInfo: Or
     return false;
   } else {
     try {
-      const userInfo: any = await conn.request({ method: 'GET', url: orgInfo.authInfo.id });
-      orgInfo.username = userInfo.username;
+      const tokenResponse = await conn.oauth2.refreshToken(orgInfo.authInfo.refresh_token);
+      orgInfo.authInfo.access_token = tokenResponse.access_token;
+      if (!orgInfo.username) {
+        const userInfo: any = await conn.request({ method: 'GET', url: orgInfo.authInfo.id });
+        orgInfo.username = userInfo.username;
+      }
+      onAuthInfoChange.fire(orgInfo);
       return true;
     } catch (ex) {
       return false;
@@ -113,4 +120,9 @@ export function getRecWithoutCode(records: CustomScript | CustomScript[]): Custo
     delete tempRec.SBQQ__Code__c;
     return tempRec;
   });
+}
+
+export async function deleteRecord(conn: jsforce.Connection, recordId: string): Promise<boolean> {
+  const results = (await conn.delete<CustomScript>(CUSTOM_SCRIPT_API_NAME, recordId)) as ErrorResult | SuccessResult;
+  return results.success;
 }

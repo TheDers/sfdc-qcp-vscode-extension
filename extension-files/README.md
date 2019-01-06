@@ -7,8 +7,8 @@ All files will be stored in the `/src` folder and will be saved with a `.ts` ext
 **To utilize the plugin, refer to the following commands:**
 
 ## Available Commands
-- `SFDC QCP: Test org credentials`
-  - Confirm org is valid
+- `SFDC QCP: Validate org credentials are valid`
+  - Confirm credentials for org are valid
 - `SFDC QCP: Initialize Project`
   - Create all project files as needed
   - Re-enter credentials for org

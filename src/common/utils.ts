@@ -1,10 +1,11 @@
 import { workspace, Uri, ExtensionContext, OutputChannel } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';
-import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted, OrgInfo } from '../models';
+import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted } from '../models';
 import { FILE_PATHS, REGEX, IV_LENGTH } from './constants';
 import { getRecWithoutCode } from './sfdc-utils';
 import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import * as sanitize from 'sanitize-filename';
 
 let _encryptionKey: string;
 
@@ -30,18 +31,22 @@ export async function readConfig(configData: ConfigData | ConfigDataEncrypted): 
   };
   if (isEncryptedOrgInfo(configData)) {
     try {
-      const orgInfo: OrgInfo = JSON.parse(decrypt(configData.orgInfo));
       newConfigData = {
         files: configData.files,
-        orgInfo,
+        orgInfo: {
+          authInfo: JSON.parse(decrypt(configData.orgInfo.authInfo)),
+          loginUrl: configData.orgInfo.loginUrl,
+          orgType: configData.orgInfo.orgType,
+          username: configData.orgInfo.username,
+        },
       };
-      newConfigData.orgInfo = orgInfo;
     } catch (ex) {
       console.error('Error decrypting orgInfo');
     }
   } else {
     newConfigData.orgInfo = configData.orgInfo;
   }
+  // Delete properties that might exist if coming from an older version of the plugin
   if (newConfigData.orgInfo && (newConfigData.orgInfo as any).username) {
     delete (newConfigData.orgInfo as any).username;
     delete (newConfigData.orgInfo as any).password;
@@ -55,7 +60,10 @@ export async function readConfig(configData: ConfigData | ConfigDataEncrypted): 
  */
 export async function saveConfig(configData: ConfigData) {
   const configDataEncrypted: ConfigDataEncrypted = {
-    orgInfo: encrypt(JSON.stringify(configData.orgInfo)),
+    orgInfo: {
+      ...(configData.orgInfo as any),
+      authInfo: encrypt(JSON.stringify(configData.orgInfo.authInfo as any)),
+    },
     files: configData.files,
   };
   return writeFileAsJson(getPathWithFileName(FILE_PATHS.CONFIG.target), configDataEncrypted);
@@ -161,7 +169,7 @@ export async function copyExtensionFileToProject(
 export async function saveRecordsToConfig(configData: ConfigData, records: CustomScript[]): Promise<CustomScriptFile[]> {
   const files: CustomScriptFile[] = [];
   getRecWithoutCode(records).forEach(record => {
-    const fileName = getPathWithFileName(`/src/${record.Name}.ts`);
+    const fileName = getPathWithFileName(`/src/${sanitize(record.Name)}.ts`);
     // if we already have a file with the same name, use it
     // TODO: what if filename was modified?
     const foundItem = configData.files.find(file => file.record.Id === record.Id);
@@ -228,7 +236,7 @@ export function decrypt(value: string) {
 }
 
 export function isEncryptedOrgInfo(orgData: any): orgData is ConfigDataEncrypted {
-  return typeof orgData.orgInfo === 'string';
+  return orgData.orgInfo && orgData.orgInfo.authInfo && typeof orgData.orgInfo.authInfo === 'string';
 }
 
 export function logRecords(outputChannel: OutputChannel, title: string, records: (CustomScript | string)[]) {
