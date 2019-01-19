@@ -1,7 +1,7 @@
 # Change Log
 
 ### 0.4.0
-[UNRELEASED]
+**01-18-2019**
 - When credentials were updated, the in-memory version was not updated if prior credentials were valid (#25)
 - Updated login process to use OAuth instead of username+password (#4)
   - User is redirected to login page in web browser, and is redirected back to the application

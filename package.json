@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with the Salesforce CPQ Quote Calculator Plugin using an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "Austin Turner",
     "url": "https://github.com/paustint"
@@ -98,7 +98,7 @@
     "commands": [
       {
         "command": "extension.testCredentials",
-        "title": "Validate org credentials",
+        "title": "Validate org credentials are valid",
         "category": "SFDC QCP"
       },
       {
@@ -112,18 +112,18 @@
         "category": "SFDC QCP"
       },
       {
+        "command": "extension.pull",
+        "title": "Pull specific QCP file from SFDC",
+        "category": "SFDC QCP"
+      },
+      {
         "command": "extension.pullAll",
         "title": "Pull all QCP records from Salesforce",
         "category": "SFDC QCP"
       },
       {
-        "command": "extension.pull",
-        "title": "Pull specific QCP file from Salesforce",
-        "category": "SFDC QCP"
-      },
-      {
         "command": "extension.pullRemote",
-        "title": "Pull specific remote record from Salesforce",
+        "title": "Pull remote records from Salesforce",
         "category": "SFDC QCP"
       },
       {
@@ -148,7 +148,7 @@
       },
       {
         "command": "extension.viewFromSalesforce",
-        "title": "View remote QCP record from Salesforce",
+        "title": "Open QCP record from Salesforce",
         "category": "SFDC QCP"
       }
     ],
