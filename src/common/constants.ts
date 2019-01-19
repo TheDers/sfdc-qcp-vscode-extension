@@ -242,7 +242,7 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
     }));
   },
   PUSH_SHOW_FILE_LIST: (uris: Uri[]) => {
-    return uris.map(uri => ({ label: uri.path, picked: false }));
+    return uris.map(uri => ({ label: uri.fsPath, picked: false }));
   },
   PUSH_ALL_CONFIRM: () => [
     { label: QP.PUSH_ALL_CONFIRM.YES, picked: true, alwaysShow: true },

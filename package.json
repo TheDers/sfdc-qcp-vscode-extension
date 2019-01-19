@@ -98,7 +98,7 @@
     "commands": [
       {
         "command": "extension.testCredentials",
-        "title": "Validate org credentials are valid",
+        "title": "Validate org credentials",
         "category": "SFDC QCP"
       },
       {
@@ -112,18 +112,18 @@
         "category": "SFDC QCP"
       },
       {
-        "command": "extension.pull",
-        "title": "Pull specific QCP file from SFDC",
-        "category": "SFDC QCP"
-      },
-      {
         "command": "extension.pullAll",
         "title": "Pull all QCP records from Salesforce",
         "category": "SFDC QCP"
       },
       {
+        "command": "extension.pull",
+        "title": "Pull specific QCP file from Salesforce",
+        "category": "SFDC QCP"
+      },
+      {
         "command": "extension.pullRemote",
-        "title": "Pull remote records from Salesforce",
+        "title": "Pull specific remote record from Salesforce",
         "category": "SFDC QCP"
       },
       {
@@ -148,7 +148,7 @@
       },
       {
         "command": "extension.viewFromSalesforce",
-        "title": "Open QCP record from Salesforce",
+        "title": "View remote QCP record from Salesforce",
         "category": "SFDC QCP"
       }
     ],
