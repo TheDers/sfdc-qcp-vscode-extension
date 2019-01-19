@@ -30,21 +30,21 @@ This plugin comes with the following core features:
 - Backup all remote files to directory
 
 ### Available Commands
-- `SFDC QCP: Validate org credentials are valid`
-  - Confirm credentials for org are valid
+- `SFDC QCP: Validate org credentials`
+  - Check if the current credentials are valid
 - `SFDC QCP: Initialize Project`
-  - Create all project files as needed
-  - Re-enter credentials for org
-  - Create example files and pull all
+  - Re-authorize or change org credentials
+  - Pull all files from Salesforce (if new project)
+  - Create example files and pull all (if new project)
 - `SFDC QCP: Create example QCP files in your project`
   - Choose one or more examples files to add to your project (this overwrites any existing files with the same name)
-- `SFDC QCP: Pull specific QCP file from SFDC`
-  - Refresh a specific file that already exists locally
 - `SFDC QCP: Pull all QCP files from Salesforce`
   - Pull all script files from Salesforce (this overwrites existing files with the same name)
-- `SFDC QCP: Pull remote file from Salesforce`
-  - Pull specific file from remote, even if it does not exist locally (this overwrites existing files with the same name)
-- `SFDC QCP: Push files to Salesforce`
+- `SFDC QCP: Pull specific QCP file from Salesforce`
+  - Refresh a specific file that already exists in workspace
+- `SFDC QCP: Pull specific remote record from Salesforce`
+  - Pull a specific record from Salesforce, even if it does not exist locally
+- `SFDC QCP: ush specified files to Salesforce`
   - Choose one or more file sto push to Salesforce, which will create or update records in Salesforce
 - `SFDC QCP: Push all files to Salesforce`
   - Push all files in project to Salesforce. This will update records that are included in `.qcp/qcp-config.json` (because we know the Id) and will create all other records on Salesforce.
@@ -54,8 +54,8 @@ This plugin comes with the following core features:
   - Remote
     - This will fetch all files from Salesforce and copy to a new folder called `/{date}`
 - `SFDC QCP: Compare Records and show differences`
-  - Shows differences between a file and a record
-- `SFDC QCP: Open QCP record from Salesforce`
+  - Compare a local file with a remote record
+- `SFDC QCP: View remote QCP record from Salesforce`
   - Opens a QCP record from Salesforce without saving the file locally
 
 ### Project Initialization

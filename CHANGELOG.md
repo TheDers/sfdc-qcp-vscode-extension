@@ -11,6 +11,7 @@
     - The generated encryption key is unique for each workspace
 - Added logging output to the output console to allow users to keep track of session history (#29)
 - When a file is deleted locally, a prompt is shown to provide the option to also delete from Salesforce.
+- Pushing files on Windows did not work properly as `c:\` was added twice to path. (#32)
 
 ### 0.3.0
 **12-19-2018**
