@@ -128,7 +128,6 @@ export async function deleteRecord(conn: jsforce.Connection, recordId: string): 
 }
 
 export function getFrontDoorUrl(conn: jsforce.Connection, recordId: string): string {
-  // &retURL=/${recordId}
-  const frontDoorUrl = `${conn.instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}`;
+  const frontDoorUrl = `${conn.instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}&retURL=/${recordId}`;
   return frontDoorUrl;
 }
