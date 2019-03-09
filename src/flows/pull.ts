@@ -15,6 +15,7 @@ export interface QueryAndSaveOptions {
   customScriptFile?: CustomScriptFile;
   recordId?: string;
   clearFileData?: boolean;
+  overwriteAll?: boolean;
 }
 
 interface OverwriteOptions {
@@ -56,7 +57,7 @@ export async function queryFilesAndSave(configData: ConfigData, options: QueryAn
       const SBQQ__Code__c = await readFile(getPathWithFileName(fileName), 'UTF-8');
       const isSame = isStringSame(SBQQ__Code__c, record.SBQQ__Code__c);
       console.log('file isSame?', isSame);
-      if (!isSame) {
+      if (!isSame && !options.overwriteAll) {
         overwriteOptions = await handleOverwriteConfirmation(sanitizedName, record, overwriteAction, backupFolderPath);
         overwriteAction = overwriteOptions.overwriteAction;
         backupFolderPath = overwriteOptions.backupFolderPath;

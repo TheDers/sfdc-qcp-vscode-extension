@@ -1,5 +1,16 @@
 # Change Log
 
+[unreleased]
+
+
+### 0.5.0
+**02-08-2019**
+- Added ability to push active file. (#35)
+- Updated version of vscode dependency. (#34)
+- Added ability to view a file in Salesforce (requires re-initializing org before this will work). (#35)
+- Added ability to view the transpiled JavaScript from a record in Salesforce Salesforce. (#37)
+- Added ability to pull active files and overwrite local version. This was previously available, but required specifically selecting the file to pull. (#38)
+
 ### 0.4.0
 **01-18-2019**
 - When credentials were updated, the in-memory version was not updated if prior credentials were valid (#25)

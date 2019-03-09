@@ -47,6 +47,11 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
+    vscode.commands.registerCommand('extension.pullActive', () => {
+      qcp.pullActive();
+    }),
+  );
+  context.subscriptions.push(
     vscode.commands.registerCommand('extension.pullAll', () => {
       qcp.pullFiles();
     }),
@@ -59,6 +64,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.push', () => {
       qcp.pushFiles();
+    }),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.pushActive', () => {
+      qcp.pushActiveFile();
     }),
   );
   context.subscriptions.push(
@@ -79,6 +89,16 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.viewFromSalesforce', () => {
       qcp.viewFromSalesforce();
+    }),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.viewTranspiledCodeFromSalesforce', () => {
+      qcp.viewTranspiledCodeFromSalesforce();
+    }),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.viewActiveFileInSalesforce', () => {
+      qcp.viewActiveFileInSalesforce();
     }),
   );
 }

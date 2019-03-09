@@ -7,6 +7,7 @@ Say goodbye to copy-and-paste, say hello to VSCode!
 ![commands](https://user-images.githubusercontent.com/5461649/50048985-45a4ca00-0097-11e9-9c39-5e1c3499f6ba.png)
 
 ## Important Details
+
 Locally, all files are saved as Typescript files, but there is no compilation so you will still need to write valid ES6 javascript instead.
 
 The reason for this is because there are may times when someone else changes the remote file or a sandbox is refreshed, it would be nearly
@@ -20,16 +21,19 @@ Your org information is encrypted with a unique key per workspace and is stored 
 ## Features
 
 This plugin comes with the following core features:
+
 - Connect to a Salesforce Org
 - Create example QCP files in your project as examples
 - Pull all existing QCP records from Salesforce
 - Pull specific QCP records from Salesforce
 - Push all locals files to Salesforce and create or update existing records on Salesforce
+- Push active file to Salesforce
 - Push specific local file to Salesforce
 - Backup local files to directory
 - Backup all remote files to directory
 
 ### Available Commands
+
 - `SFDC QCP: Validate org credentials`
   - Check if the current credentials are valid
 - `SFDC QCP: Initialize Project`
@@ -40,12 +44,16 @@ This plugin comes with the following core features:
   - Choose one or more examples files to add to your project (this overwrites any existing files with the same name)
 - `SFDC QCP: Pull all QCP files from Salesforce`
   - Pull all script files from Salesforce (this overwrites existing files with the same name)
-- `SFDC QCP: Pull specific QCP file from Salesforce`
+- `SFDC QCP: Pull active QCP file from Salesforce`
   - Refresh a specific file that already exists in workspace
+- `SFDC QCP: Pull active file from Salesforce and overwrite local version`
+  - Refreshes the local open file with the version on Salesforce
 - `SFDC QCP: Pull specific remote record from Salesforce`
   - Pull a specific record from Salesforce, even if it does not exist locally
-- `SFDC QCP: ush specified files to Salesforce`
+- `SFDC QCP: Push specified files to Salesforce`
   - Choose one or more file sto push to Salesforce, which will create or update records in Salesforce
+- `SFDC QCP: Push active file to Salesforce`
+  - Push active file to Salesforce. If the file has unsaved changes, the file will first be saved
 - `SFDC QCP: Push all files to Salesforce`
   - Push all files in project to Salesforce. This will update records that are included in `.qcp/qcp-config.json` (because we know the Id) and will create all other records on Salesforce.
 - `SFDC QCP: Backup local or remote files`
@@ -57,11 +65,16 @@ This plugin comes with the following core features:
   - Compare a local file with a remote record
 - `SFDC QCP: View remote QCP record from Salesforce`
   - Opens a QCP record from Salesforce without saving the file locally
+- `SFDC QCP: View transpiled code for active file`
+  - Opens the transpiled JavaScript from the active custom script record in Salesforce
+- `SFDC QCP: View active QCP record in Salesforce`
+  - Automatically logs in to Salesforce and navigated to the active custom script record detail page
 
 ### Project Initialization
-**To get started, create a blank folder and open it with VSCode.**  You can use a folder with existing code if you want to.
 
-Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`.  All other options will be hidden until the project is initialized.
+**To get started, create a blank folder and open it with VSCode.** You can use a folder with existing code if you want to.
+
+Open the command pallette and type in `QCP` and choose `SFDC QCP: Initialize Project`. All other options will be hidden until the project is initialized.
 
 When you initialize a new project, You will be redirected to Salesforce to login using OAuth, and be redirected back to VSCode.
 Your authentication information will be stored in this file `.qcp/qcp-config.json`.
@@ -99,4 +112,5 @@ Check out my [Medium article](https://medium.com/@paustint/getting-started-with-
 See changes in Changelog.
 
 ## Contributing
+
 Contributions of all kinds will be considered. https://github.com/atginfo/sfdc-qcp-vscode-extension

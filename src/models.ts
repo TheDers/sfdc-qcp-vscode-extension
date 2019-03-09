@@ -64,6 +64,7 @@ export interface CustomScriptBase {
 
 export interface CustomScript extends CustomScriptBase {
   SBQQ__Code__c: string;
+  SBQQ__TranspiledCode__c?: string;
 }
 
 export interface LogEntry {
