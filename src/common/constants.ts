@@ -129,7 +129,13 @@ export const MESSAGES = {
     SUCCESS: (recordName: string) => `Successfully pushed record ${recordName} to Salesforce.`,
     SUCCESS_COUNT: (count: number) => `Successfully pushed ${count} records to Salesforce.`,
     ERROR: 'There was an error pushing this file to Salesforce.',
+    ERROR_W_FILENAME: (filename: string) => `There was an error pushing ${filename} to Salesforce.`,
+    ERROR_W_EX: (filename: string, message: string) => `There was an error pushing ${filename} to Salesforce. ${message}`,
+    ERROR_FILE_UNTITLED: 'Please save your untitled file before pushing to Salesforce.',
+    ERROR_SAVING_FILE: 'There was an error saving your modified active file, please save your changes and try pushing to Salesforce again.',
+    ERROR_NO_ACTIVE_FILE: 'There is no active file to push to Salesforce.',
     PROGRESS_ONE: 'Pushing file to Salesforce.',
+    PROGRESS_ONE_W_FILENAME: (filename: string) => `Pushing ${filename} to Salesforce.`,
     PROGRESS_MULTI: 'Pushing files to Salesforce.',
   },
   DELETE: {
@@ -304,7 +310,7 @@ export const FILE_PATHS = {
 const QUERY_FIELDS_BASE = `Id, Name`;
 const QUERY_FIELDS_USER_FIELDS = `CreatedById, CreatedDate, LastModifiedById, LastModifiedDate, CreatedBy.Id, CreatedBy.Name, CreatedBy.Username, LastModifiedBy.Id, LastModifiedBy.Name, LastModifiedBy.Username`;
 const QUERY_FIELDS_WO_CODE = `${QUERY_FIELDS_BASE}, ${QUERY_FIELDS_USER_FIELDS}`;
-const QUERY_FIELDS_ALL = `${QUERY_FIELDS_WO_CODE}, SBQQ__Code__c, SBQQ__GroupFields__c, SBQQ__QuoteFields__c, SBQQ__QuoteLineFields__c`;
+const QUERY_FIELDS_ALL = `${QUERY_FIELDS_WO_CODE}, SBQQ__Code__c, SBQQ__TranspiledCode__c, SBQQ__GroupFields__c, SBQQ__QuoteFields__c, SBQQ__QuoteLineFields__c`;
 
 export const QUERIES = {
   ALL_WITHOUT_CODE: () => `SELECT ${QUERY_FIELDS_WO_CODE} FROM SBQQ__CustomScript__c`,
@@ -323,7 +329,7 @@ export const AUTH_HTTP: AuthHttp = {
       const params = parameterize({
         response_type: `token`,
         client_id,
-        scope: `api refresh_token`,
+        scope: `api refresh_token web`,
         redirect_uri: 'vscode%3A%2F%2Fpaustint.sfdc-qcp-vscode-extension%2Fauth_callback',
         prompt: 'login',
       });

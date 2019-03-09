@@ -21,6 +21,7 @@ export async function pickRemoteFile(
   conn: jsforce.Connection,
   existingRecs?: CustomScriptBase[],
   skipRecordId?: string,
+  query?: string,
 ): Promise<{ records: CustomScriptBase[]; uri: Uri } | undefined> {
   let records: CustomScriptBase[] = existingRecs || [];
   if (!Array.isArray(existingRecs)) {
@@ -34,7 +35,7 @@ export async function pickRemoteFile(
   if (pickedFile && pickedFile.description) {
     return {
       records,
-      uri: getSfdcUri(pickedFile.description),
+      uri: getSfdcUri(pickedFile.description, query),
     };
   }
 }

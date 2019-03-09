@@ -41,13 +41,17 @@
     "onCommand:extension.init",
     "onCommand:extension.initExampleFiles",
     "onCommand:extension.pull",
+    "onCommand:extension.pullActive",
     "onCommand:extension.pullAll",
     "onCommand:extension.pullRemote",
     "onCommand:extension.push",
+    "onCommand:extension.pushActive",
     "onCommand:extension.pushAll",
     "onCommand:extension.backup",
     "onCommand:extension.diff",
-    "onCommand:extension.viewFromSalesforce"
+    "onCommand:extension.viewFromSalesforce",
+    "onCommand:extension.viewTranspiledCodeFromSalesforce",
+    "onCommand:extension.viewActiveFileInSalesforce"
   ],
   "main": "./out/extension",
   "contributes": {
@@ -122,13 +126,23 @@
         "category": "SFDC QCP"
       },
       {
+        "command": "extension.pullActive",
+        "title": "Pull active file from Salesforce and overwrite local version",
+        "category": "SFDC QCP"
+      },
+      {
         "command": "extension.pullRemote",
-        "title": "Pull remote records from Salesforce",
+        "title": "Pull remote record from Salesforce",
         "category": "SFDC QCP"
       },
       {
         "command": "extension.push",
         "title": "Push specified files to Salesforce",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.pushActive",
+        "title": "Push active file to Salesforce",
         "category": "SFDC QCP"
       },
       {
@@ -149,6 +163,16 @@
       {
         "command": "extension.viewFromSalesforce",
         "title": "Open QCP record from Salesforce",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.viewTranspiledCodeFromSalesforce",
+        "title": "View transpiled code for active file",
+        "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.viewActiveFileInSalesforce",
+        "title": "View active QCP record in Salesforce",
         "category": "SFDC QCP"
       }
     ],
@@ -171,11 +195,19 @@
           "when": "sfdcQcp:projectActive"
         },
         {
+          "command": "extension.pullActive",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
           "command": "extension.pullRemote",
           "when": "sfdcQcp:projectActive"
         },
         {
           "command": "extension.push",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.pushActive",
           "when": "sfdcQcp:projectActive"
         },
         {
@@ -192,6 +224,14 @@
         },
         {
           "command": "extension.viewFromSalesforce",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.viewTranspiledCodeFromSalesforce",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.viewActiveFileInSalesforce",
           "when": "sfdcQcp:projectActive"
         }
       ]
@@ -213,7 +253,7 @@
     "@types/sanitize-filename": "^1.1.28",
     "tslint": "^5.8.0",
     "typescript": "^3.1.4",
-    "vscode": "^1.1.25"
+    "vscode": "^1.1.30"
   },
   "dependencies": {
     "axios": "^0.18.0",

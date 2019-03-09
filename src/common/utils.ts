@@ -1,4 +1,4 @@
-import { workspace, Uri, ExtensionContext, OutputChannel } from 'vscode';
+import { workspace, window, Uri, ExtensionContext, OutputChannel } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
 import * as path from 'path';
 import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted } from '../models';
@@ -119,6 +119,30 @@ export function getUnusedFolderName(folderPath: string): string {
   }
 }
 
+export function findActiveFileFromConfig(configData: ConfigData, showErrorIfNotFound: boolean = true): CustomScriptFile | undefined {
+  if (window.activeTextEditor) {
+    const activeDocument = window.activeTextEditor.document;
+    if (activeDocument.isUntitled) {
+      if (showErrorIfNotFound) {
+        window.showErrorMessage(`The active file ${activeDocument.fileName} does not exist in Salesforce.`);
+      }
+      return;
+    }
+    const foundFileConfig = configData.files.find(file => file.fileName === activeDocument.fileName);
+    if (foundFileConfig) {
+      return foundFileConfig;
+    } else {
+      if (showErrorIfNotFound) {
+        window.showErrorMessage(
+          `The file ${
+            activeDocument.fileName
+          } does not seem to be synchronized locally. Ensure the the active file is pushed to or pulled from Salesforce.`,
+        );
+      }
+    }
+  }
+}
+
 /**
  * Copy file
  * @param fileName path to file
@@ -199,8 +223,8 @@ export function isStringSame(str1: string, str2: string): boolean {
   return hash1 === hash2;
 }
 
-export function getSfdcUri(recordId: string) {
-  return Uri.parse(`sfdc://sfdc/record/${recordId}.ts#${recordId}`);
+export function getSfdcUri(recordId: string, query?: string) {
+  return Uri.parse(`sfdc://sfdc/record/${recordId}.ts?${query || ''}#${recordId}`);
 }
 
 export function parameterize(data: any = {}): string {
