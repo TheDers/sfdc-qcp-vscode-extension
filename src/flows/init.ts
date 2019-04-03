@@ -61,9 +61,17 @@ export async function createOrUpdateGitignore(): Promise<boolean> {
     // search through and see if .qcp exists in it, if not, add it
     const gitignore = await readFile(existingGitIgnore.fsPath, 'UTF-8');
     const lines = gitignore.split('\n');
-    const existingIdx = lines.findIndex(line => line.trim() === '.qcp');
-    if (existingIdx < 0) {
-      fileToUpdateOrCreate = gitignore + GITIGNORE_CONTENTS;
+    const existingQcpIdx = lines.findIndex(line => line.trim() === '.qcp');
+
+    if (existingQcpIdx < 0) {
+      fileToUpdateOrCreate += gitignore + GITIGNORE_CONTENTS;
+    }
+
+    if (!fileToUpdateOrCreate) {
+      const existingEnvIdx = lines.findIndex(line => line.trim() === '.env');
+      if (existingEnvIdx < 0) {
+        fileToUpdateOrCreate += gitignore + `\n.env\n`;
+      }
     }
   } else {
     filePath = getPathWithFileName('.gitignore');

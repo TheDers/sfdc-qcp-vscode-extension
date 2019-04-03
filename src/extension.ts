@@ -101,6 +101,11 @@ export function activate(context: vscode.ExtensionContext) {
       qcp.viewActiveFileInSalesforce();
     }),
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.fetchRecordData', () => {
+      qcp.fetchRecordData();
+    }),
+  );
 }
 
 // this method is called when your extension is deactivated

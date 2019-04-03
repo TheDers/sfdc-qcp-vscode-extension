@@ -131,3 +131,13 @@ export function getFrontDoorUrl(conn: jsforce.Connection, recordId: string): str
   const frontDoorUrl = `${conn.instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}&retURL=/${recordId}`;
   return frontDoorUrl;
 }
+
+export async function fetchQuoteModel(conn: jsforce.Connection, recordId: string): Promise<string> {
+  let results = await conn.apex.get<string>(`/SBQQ/ServiceRouter?reader=SBQQ.QuoteAPI.QuoteReader&uid=${recordId}`);
+  results = JSON.stringify(JSON.parse(results), null, 2);
+  return results;
+}
+
+export function validateId(recordId: string): boolean {
+  return /^([a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})$/.test(recordId);
+}

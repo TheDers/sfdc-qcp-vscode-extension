@@ -51,7 +51,8 @@
     "onCommand:extension.diff",
     "onCommand:extension.viewFromSalesforce",
     "onCommand:extension.viewTranspiledCodeFromSalesforce",
-    "onCommand:extension.viewActiveFileInSalesforce"
+    "onCommand:extension.viewActiveFileInSalesforce",
+    "extension.fetchRecordData"
   ],
   "main": "./out/extension",
   "contributes": {
@@ -174,6 +175,11 @@
         "command": "extension.viewActiveFileInSalesforce",
         "title": "View active QCP record in Salesforce",
         "category": "SFDC QCP"
+      },
+      {
+        "command": "extension.fetchRecordData",
+        "title": "Fetch record data from Salesforce and save locally",
+        "category": "SFDC QCP"
       }
     ],
     "menus": {
@@ -232,6 +238,10 @@
         },
         {
           "command": "extension.viewActiveFileInSalesforce",
+          "when": "sfdcQcp:projectActive"
+        },
+        {
+          "command": "extension.fetchRecordData",
           "when": "sfdcQcp:projectActive"
         }
       ]

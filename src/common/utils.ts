@@ -1,5 +1,5 @@
 import { workspace, window, Uri, ExtensionContext, OutputChannel } from 'vscode';
-import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
+import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync, ensureDir, copySync } from 'fs-extra';
 import * as path from 'path';
 import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted } from '../models';
 import { FILE_PATHS, REGEX, IV_LENGTH } from './constants';
@@ -185,6 +185,23 @@ export async function copyExtensionFileToProject(
   if (overwriteIfExists || !exists) {
     await ensureFile(targetFilename);
     copyFileSync(srcPath, targetFilename);
+    return true;
+  }
+  return false;
+}
+
+export async function copyExtensionFolderToProject(
+  context: ExtensionContext,
+  src: string,
+  dest: string,
+  overwriteIfExists: boolean = false,
+): Promise<boolean> {
+  const srcPath = context.asAbsolutePath(`extension-files/${src}`);
+  const targetFolderName = getPathWithFileName(dest);
+  const exists = await fileExists(dest);
+  if (overwriteIfExists || !exists) {
+    await ensureDir(targetFolderName);
+    copySync(srcPath, targetFolderName);
     return true;
   }
   return false;

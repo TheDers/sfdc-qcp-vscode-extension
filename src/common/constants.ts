@@ -1,6 +1,7 @@
 import { InputBoxOptions, QuickPickItem, Uri } from 'vscode';
 import { CustomScriptBase, CustomScriptFile, AuthHttp } from '../models';
 import { parameterize } from './utils';
+import { validateId } from './sfdc-utils';
 
 /**
  * This file contains extension constants
@@ -53,6 +54,7 @@ export const GITIGNORE_CONTENTS = `
 
 # Added by VSCode Plugin - SFDC QCP
 .qcp
+.env
 
 `;
 
@@ -151,6 +153,9 @@ export const MESSAGES = {
     SUCCESS: ``,
     REMOTE_RECORD_NOT_FOUND: (recordId: string) => `Could not find record on salesforce with Id ${recordId}.`,
   },
+  FETCH: {
+    IN_PROGRESS: (recordId: string) => `Fetching quoteModel for quote ${recordId}.`,
+  },
 };
 
 type INPUT_OPTIONS = {
@@ -171,6 +176,8 @@ type INPUT_OPTIONS = {
   BACKUP_CHOOSE_SRC: () => QuickPickItem[];
   OVERWRITE_CONFIRM: (filename: string) => QuickPickItem[];
   COMPARE_CONFIRMATION: () => QuickPickItem[];
+  FETCH_RECORD_ID: () => InputBoxOptions;
+  FETCH_RECORD_FILE_NAME: (currValue: string) => InputBoxOptions;
 };
 
 export const INPUT_OPTIONS: INPUT_OPTIONS = {
@@ -278,6 +285,31 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
     { label: QP.COMPARE_CONFIRMATION.LOCAL_FILES },
     { label: QP.COMPARE_CONFIRMATION.REMOTE_RECORDS },
   ],
+  FETCH_RECORD_ID: () => ({
+    prompt: 'Enter a Quote Record Id to Fetch',
+    password: false,
+    ignoreFocusOut: true,
+    validateInput: (value: string) => {
+      if (validateId(value || '')) {
+        return null;
+      } else {
+        return 'Enter a valid 15 or 18 digit id';
+      }
+    },
+  }),
+  FETCH_RECORD_FILE_NAME: (currValue: string) => ({
+    prompt: 'What would you like the file to be named?',
+    password: false,
+    ignoreFocusOut: true,
+    value: currValue,
+    validateInput: (value: string) => {
+      if (value.toLowerCase().endsWith('json')) {
+        return null;
+      } else {
+        return 'The file extension must be json';
+      }
+    },
+  }),
 };
 
 export const FILE_PATHS = {
@@ -296,6 +328,10 @@ export const FILE_PATHS = {
     source: 'tsconfig.json',
     target: 'tsconfig.json',
   },
+  PACKAGE_JSON: {
+    source: 'package.json',
+    target: 'package.json',
+  },
   PRETTIER: {
     source: 'prettierrc',
     target: '.prettierrc',
@@ -304,7 +340,18 @@ export const FILE_PATHS = {
     source: 'src/qcp-example.ts',
     target: 'src/qcp-example.ts',
   },
+  TESTS: {
+    source: 'tests',
+    target: 'tests',
+  },
+  ENV: {
+    source: '.env',
+    target: '.env',
+  },
   SRC: 'src',
+  DATA: {
+    directory: 'data',
+  },
 };
 
 const QUERY_FIELDS_BASE = `Id, Name`;

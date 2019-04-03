@@ -17,6 +17,7 @@ import {
   writeFileAsJson,
   findActiveFileFromConfig,
   getSfdcUri,
+  copyExtensionFolderToProject,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
 import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRemoteFile } from './flows/diff';
@@ -26,6 +27,7 @@ import { getFilesToPush, pushFile } from './flows/push';
 import { ConfigData, ConfigDataEncrypted, StringOrUndefined, OrgInfo, CustomScriptFile } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
 import { basename } from 'path';
+import { getRecordName, fetchAndSaveRecordRecord } from './flows/fetch-records';
 
 export let outputChannel: OutputChannel;
 
@@ -198,6 +200,15 @@ export class QcpExtension {
       }
       if (await copyExtensionFileToProject(this.context, FILE_PATHS.TSCONFIG.source, FILE_PATHS.TSCONFIG.target)) {
         savedConfigFiles.push('tsconfig.json');
+      }
+      if (await copyExtensionFileToProject(this.context, FILE_PATHS.PACKAGE_JSON.source, FILE_PATHS.PACKAGE_JSON.target)) {
+        savedConfigFiles.push('package.json');
+      }
+      if (await copyExtensionFileToProject(this.context, FILE_PATHS.ENV.source, FILE_PATHS.ENV.target)) {
+        savedConfigFiles.push('package.json');
+      }
+      if (await copyExtensionFolderToProject(this.context, FILE_PATHS.TESTS.source, FILE_PATHS.TESTS.target)) {
+        savedConfigFiles.push('/tests/*');
       }
       if (await createOrUpdateGitignore()) {
         savedConfigFiles.push('.gitignore');
@@ -676,6 +687,45 @@ export class QcpExtension {
       } catch (ex) {
         window.showErrorMessage(`Error authenticating org: ${ex.message}.`);
       }
+    }
+  }
+
+  /**
+   * COMMAND: VIEW ACTIVE FILE IN SAMESFORCE
+   */
+  async fetchRecordData() {
+    // ask user to enter record Id
+    // Ask user to name file, default to record id
+    try {
+      const results = await getRecordName();
+      if (results) {
+        const { recordId, filename } = results;
+        window.withProgress(
+          {
+            location: ProgressLocation.Notification,
+            title: MESSAGES.FETCH.IN_PROGRESS(filename),
+            cancellable: false,
+          },
+          async (progress, token) => {
+            try {
+              const conn = await initConnection(this.configData.orgInfo, this.conn, false);
+              // call SFDC API and fetch record data
+              // save results
+              await fetchAndSaveRecordRecord(conn, recordId, filename);
+              window.showInformationMessage(`Successfully saved quoteModel to ${filename}.`);
+              outputChannel.appendLine(`Successfully saved quoteModel to ${filename}.`);
+            } catch (ex) {
+              console.log('Error fetching / saving record from Salesforce', ex);
+              window.showErrorMessage(`Error fetching record from Salesforce: ${ex.message}.`);
+              outputChannel.appendLine(`Error fetching record from Salesforce: ${ex.message}.`);
+            }
+          },
+        );
+      }
+    } catch (ex) {
+      console.log('Error obtaining record Id and filename', ex);
+      window.showErrorMessage(`Error getting quote record Id: ${ex.message}.`);
+      outputChannel.appendLine(`Error getting quote record Id: ${ex.message}.`);
     }
   }
 
