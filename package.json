@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with the Salesforce CPQ Quote Calculator Plugin using an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "0.5.1",
+  "version": "1.0.0",
   "author": {
     "name": "Austin Turner",
     "url": "https://github.com/paustint"
@@ -40,18 +40,16 @@
     "onCommand:extension.testCredentials",
     "onCommand:extension.init",
     "onCommand:extension.initExampleFiles",
-    "onCommand:extension.pull",
-    "onCommand:extension.pullActive",
     "onCommand:extension.pullAll",
-    "onCommand:extension.pullRemote",
+    "onCommand:extension.pullActive",
     "onCommand:extension.push",
     "onCommand:extension.pushActive",
-    "onCommand:extension.pushAll",
     "onCommand:extension.backup",
     "onCommand:extension.diff",
-    "onCommand:extension.viewFromSalesforce",
+    "onCommand:extension.diffActive",
     "onCommand:extension.viewTranspiledCodeFromSalesforce",
-    "onCommand:extension.viewActiveFileInSalesforce"
+    "onCommand:extension.viewActiveFileInSalesforce",
+    "extension.fetchRecordData"
   ],
   "main": "./out/extension",
   "contributes": {
@@ -103,7 +101,11 @@
       {
         "command": "extension.testCredentials",
         "title": "Validate org credentials are valid",
-        "category": "SFDC QCP"
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/cloud-download.svg",
+          "dark": "images/cloud-download_inverse.svg"
+        }
       },
       {
         "command": "extension.init",
@@ -116,67 +118,119 @@
         "category": "SFDC QCP"
       },
       {
-        "command": "extension.pull",
-        "title": "Pull specific QCP file from SFDC",
-        "category": "SFDC QCP"
-      },
-      {
         "command": "extension.pullAll",
-        "title": "Pull all QCP records from Salesforce",
-        "category": "SFDC QCP"
+        "title": "Pull QCP records from Salesforce",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/cloud-download.svg",
+          "dark": "images/cloud-download_inverse.svg"
+        }
       },
       {
         "command": "extension.pullActive",
-        "title": "Pull active file from Salesforce and overwrite local version",
-        "category": "SFDC QCP"
-      },
-      {
-        "command": "extension.pullRemote",
-        "title": "Pull remote record from Salesforce",
-        "category": "SFDC QCP"
+        "title": "Pull active file from Salesforce",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/cloud-download.svg",
+          "dark": "images/cloud-download_inverse.svg"
+        }
       },
       {
         "command": "extension.push",
-        "title": "Push specified files to Salesforce",
-        "category": "SFDC QCP"
+        "title": "Push QCP files to Salesforce",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/cloud-upload.svg",
+          "dark": "images/cloud-upload_inverse.svg"
+        }
       },
       {
         "command": "extension.pushActive",
         "title": "Push active file to Salesforce",
-        "category": "SFDC QCP"
-      },
-      {
-        "command": "extension.pushAll",
-        "title": "Push all files to Salesforce",
-        "category": "SFDC QCP"
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/cloud-upload.svg",
+          "dark": "images/cloud-upload_inverse.svg"
+        }
       },
       {
         "command": "extension.backup",
         "title": "Backup local or remote files",
-        "category": "SFDC QCP"
+        "category": "SFDC QCP",
+        "icons": {
+          "light": "images/desktop-download.svg",
+          "dark": "images/desktop-download_inverse.svg"
+        }
       },
       {
         "command": "extension.diff",
-        "title": "Compare Records and show differences",
-        "category": "SFDC QCP"
+        "title": "Compare records and show differences",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/diff.svg",
+          "dark": "images/diff_inverse.svg"
+        }
       },
       {
-        "command": "extension.viewFromSalesforce",
-        "title": "Open QCP record from Salesforce",
-        "category": "SFDC QCP"
+        "command": "extension.diffActive",
+        "title": "Compare active file with the Salesforce record",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/diff.svg",
+          "dark": "images/diff_inverse.svg"
+        }
       },
       {
         "command": "extension.viewTranspiledCodeFromSalesforce",
         "title": "View transpiled code for active file",
-        "category": "SFDC QCP"
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/file-binary.svg",
+          "dark": "images/file-binary_inverse.svg"
+        }
       },
       {
         "command": "extension.viewActiveFileInSalesforce",
-        "title": "View active QCP record in Salesforce",
-        "category": "SFDC QCP"
+        "title": "View QCP record in Salesforce",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/link-external.svg",
+          "dark": "images/link-external_inverse.svg"
+        }
+      },
+      {
+        "command": "extension.fetchRecordData",
+        "title": "Get QuoteModel record from Salesforce and save locally",
+        "category": "SFDC QCP",
+        "icon": {
+          "light": "images/file-binary.svg",
+          "dark": "images/file-binary_inverse.svg"
+        }
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "extension.pullActive",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile",
+          "group": "navigation@1"
+        },
+        {
+          "command": "extension.pushActive",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile",
+          "group": "navigation@2"
+        },
+        {
+          "command": "extension.diffActive",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile",
+          "group": "navigation@3"
+        },
+        {
+          "command": "extension.viewActiveFileInSalesforce",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile",
+          "group": "navigation@4"
+        }
+      ],
       "commandPalette": [
         {
           "command": "extension.testCredentials",
@@ -187,20 +241,12 @@
           "when": "sfdcQcp:projectActive"
         },
         {
-          "command": "extension.pull",
-          "when": "sfdcQcp:projectActive"
-        },
-        {
           "command": "extension.pullAll",
           "when": "sfdcQcp:projectActive"
         },
         {
           "command": "extension.pullActive",
-          "when": "sfdcQcp:projectActive"
-        },
-        {
-          "command": "extension.pullRemote",
-          "when": "sfdcQcp:projectActive"
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile"
         },
         {
           "command": "extension.push",
@@ -208,11 +254,7 @@
         },
         {
           "command": "extension.pushActive",
-          "when": "sfdcQcp:projectActive"
-        },
-        {
-          "command": "extension.pushAll",
-          "when": "sfdcQcp:projectActive"
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile"
         },
         {
           "command": "extension.backup",
@@ -223,8 +265,8 @@
           "when": "sfdcQcp:projectActive"
         },
         {
-          "command": "extension.viewFromSalesforce",
-          "when": "sfdcQcp:projectActive"
+          "command": "extension.diffActive",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile"
         },
         {
           "command": "extension.viewTranspiledCodeFromSalesforce",
@@ -232,6 +274,10 @@
         },
         {
           "command": "extension.viewActiveFileInSalesforce",
+          "when": "sfdcQcp:projectActive && hasActiveQcpFile"
+        },
+        {
+          "command": "extension.fetchRecordData",
           "when": "sfdcQcp:projectActive"
         }
       ]

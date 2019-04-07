@@ -42,11 +42,6 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand('extension.pull', () => {
-      qcp.pullFile();
-    }),
-  );
-  context.subscriptions.push(
     vscode.commands.registerCommand('extension.pullActive', () => {
       qcp.pullActive();
     }),
@@ -54,11 +49,6 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.pullAll', () => {
       qcp.pullFiles();
-    }),
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand('extension.pullRemote', () => {
-      qcp.pullRemoteFile();
     }),
   );
   context.subscriptions.push(
@@ -72,11 +62,6 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand('extension.pushAll', () => {
-      qcp.pushAllFiles();
-    }),
-  );
-  context.subscriptions.push(
     vscode.commands.registerCommand('extension.backup', () => {
       qcp.backup();
     }),
@@ -87,8 +72,8 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand('extension.viewFromSalesforce', () => {
-      qcp.viewFromSalesforce();
+    vscode.commands.registerCommand('extension.diffActive', () => {
+      qcp.diff(true);
     }),
   );
   context.subscriptions.push(
@@ -99,6 +84,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('extension.viewActiveFileInSalesforce', () => {
       qcp.viewActiveFileInSalesforce();
+    }),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('extension.fetchRecordData', () => {
+      qcp.fetchRecordData();
     }),
   );
 }

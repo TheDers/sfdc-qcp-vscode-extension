@@ -5,12 +5,13 @@
  * but the code does not conform to modern JS standards
  *
  * 1) It is recommended to use
- * line.record.True_Effective_End_Date__c OVER line.record['True_Effective_End_Date__c']
+ *  `line.record.True_Effective_End_Date__c` OVER `line.record['True_Effective_End_Date__c']`
  *
- * 2) You sould never use != or == and should always use === and !== (Etc..)
+ * 2) You should never use != or == and should always use === and !== (Etc..)
  *
- * 3) You should not put business logic in lifecycle methods (e.x. onAfterCalculate())
+ * 3) You should not put business logic in life-cycle methods (e.x. `onAfterCalculate()`)
  *
+ * 4) Use fat arrow function (`=>`) instead of `function()` for anonymous inner functions
  *
  */
 

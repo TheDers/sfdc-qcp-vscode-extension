@@ -75,6 +75,7 @@ export async function testValidCredentials(conn: jsforce.Connection, orgInfo: Or
     try {
       const tokenResponse = await conn.oauth2.refreshToken(orgInfo.authInfo.refresh_token);
       orgInfo.authInfo.access_token = tokenResponse.access_token;
+      conn.accessToken = tokenResponse.access_token;
       if (!orgInfo.username) {
         const userInfo: any = await conn.request({ method: 'GET', url: orgInfo.authInfo.id });
         orgInfo.username = userInfo.username;
@@ -130,4 +131,14 @@ export async function deleteRecord(conn: jsforce.Connection, recordId: string): 
 export function getFrontDoorUrl(conn: jsforce.Connection, recordId: string): string {
   const frontDoorUrl = `${conn.instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}&retURL=/${recordId}`;
   return frontDoorUrl;
+}
+
+export async function fetchQuoteModel(conn: jsforce.Connection, recordId: string): Promise<string> {
+  let results = await conn.apex.get<string>(`/SBQQ/ServiceRouter?reader=SBQQ.QuoteAPI.QuoteReader&uid=${recordId}`);
+  results = JSON.stringify(JSON.parse(results), null, 2);
+  return results;
+}
+
+export function validateId(recordId: string): boolean {
+  return /^([a-zA-Z0-9]{15}|[a-zA-Z0-9]{18})$/.test(recordId);
 }

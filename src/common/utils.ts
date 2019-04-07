@@ -1,5 +1,5 @@
-import { workspace, window, Uri, ExtensionContext, OutputChannel } from 'vscode';
-import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync } from 'fs-extra';
+import { workspace, window, Uri, ExtensionContext, OutputChannel, commands, TextDocument } from 'vscode';
+import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync, ensureDir, copySync } from 'fs-extra';
 import * as path from 'path';
 import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted } from '../models';
 import { FILE_PATHS, REGEX, IV_LENGTH } from './constants';
@@ -190,6 +190,23 @@ export async function copyExtensionFileToProject(
   return false;
 }
 
+export async function copyExtensionFolderToProject(
+  context: ExtensionContext,
+  src: string,
+  dest: string,
+  overwriteIfExists: boolean = false,
+): Promise<boolean> {
+  const srcPath = context.asAbsolutePath(`extension-files/${src}`);
+  const targetFolderName = getPathWithFileName(dest);
+  const exists = await fileExists(dest);
+  if (overwriteIfExists || !exists) {
+    await ensureDir(targetFolderName);
+    copySync(srcPath, targetFolderName);
+    return true;
+  }
+  return false;
+}
+
 export async function saveRecordsToConfig(configData: ConfigData, records: CustomScript[]): Promise<CustomScriptFile[]> {
   const files: CustomScriptFile[] = [];
   getRecWithoutCode(records).forEach(record => {
@@ -273,4 +290,15 @@ export function logRecords(outputChannel: OutputChannel, title: string, records:
       outputChannel.appendLine(`- ${rec.Name} (${rec.Id})`);
     }
   });
+}
+
+export function updateContextIfActiveQcpFile(document: TextDocument) {
+  let hasActiveQcpFile = false;
+  try {
+    hasActiveQcpFile = REGEX.SRC_DIR.test(document.uri.path);
+  } catch (ex) {
+    console.log('Error checking hasActiveQcpFile');
+  } finally {
+    commands.executeCommand('setContext', 'hasActiveQcpFile', hasActiveQcpFile);
+  }
 }

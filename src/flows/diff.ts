@@ -40,10 +40,12 @@ export async function pickRemoteFile(
   }
 }
 
-export async function compareLocalWithRemote(compareSame: boolean, configData: ConfigData, conn?: jsforce.Connection) {
+export async function compareLocalWithRemote(compareSame: boolean, configData: ConfigData, conn?: jsforce.Connection, sourceFile?: string) {
   try {
     conn = await initConnection(configData.orgInfo, conn);
-    const sourceFile = await getFileToCompare();
+    if (!sourceFile) {
+      sourceFile = await getFileToCompare();
+    }
     if (sourceFile) {
       const source = Uri.file(sourceFile);
       if (compareSame) {
