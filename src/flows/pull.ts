@@ -160,14 +160,15 @@ async function handleOverwriteConfirmation(
 
 /**
  * For all files provided, save or ask user if we should overwrite
+ * @deprecated 4.6.19
  */
-export async function getFileToPull(configData: ConfigData): Promise<CustomScriptFile | undefined> {
-  const pickedFile = await window.showQuickPick(INPUT_OPTIONS.PULL_ONE_SHOW_FILE_LIST(configData.files));
-  console.log('pickedFile', pickedFile);
-  if (pickedFile) {
-    return configData.files.find(file => file.fileName === pickedFile.label);
-  }
-}
+// export async function getFileToPull(configData: ConfigData): Promise<CustomScriptFile | undefined> {
+//   const pickedFile = await window.showQuickPick(INPUT_OPTIONS.PULL_ONE_SHOW_FILE_LIST(configData.files));
+//   console.log('pickedFile', pickedFile);
+//   if (pickedFile) {
+//     return configData.files.find(file => file.fileName === pickedFile.label);
+//   }
+// }
 
 export async function getRemoteFiles(configData: ConfigData, conn?: jsforce.Connection): Promise<CustomScript[] | undefined> {
   conn = await initConnection(configData.orgInfo, conn);

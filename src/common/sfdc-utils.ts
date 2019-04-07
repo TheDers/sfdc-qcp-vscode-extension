@@ -75,6 +75,7 @@ export async function testValidCredentials(conn: jsforce.Connection, orgInfo: Or
     try {
       const tokenResponse = await conn.oauth2.refreshToken(orgInfo.authInfo.refresh_token);
       orgInfo.authInfo.access_token = tokenResponse.access_token;
+      conn.accessToken = tokenResponse.access_token;
       if (!orgInfo.username) {
         const userInfo: any = await conn.request({ method: 'GET', url: orgInfo.authInfo.id });
         orgInfo.username = userInfo.username;

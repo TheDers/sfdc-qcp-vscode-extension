@@ -1,4 +1,4 @@
-import { workspace, window, Uri, ExtensionContext, OutputChannel } from 'vscode';
+import { workspace, window, Uri, ExtensionContext, OutputChannel, commands, TextDocument } from 'vscode';
 import { writeFile, readFileSync, writeJson, pathExistsSync, ensureFile, copyFileSync, ensureDir, copySync } from 'fs-extra';
 import * as path from 'path';
 import { ConfigData, CustomScript, CustomScriptFile, ConfigDataEncrypted } from '../models';
@@ -290,4 +290,15 @@ export function logRecords(outputChannel: OutputChannel, title: string, records:
       outputChannel.appendLine(`- ${rec.Name} (${rec.Id})`);
     }
   });
+}
+
+export function updateContextIfActiveQcpFile(document: TextDocument) {
+  let hasActiveQcpFile = false;
+  try {
+    hasActiveQcpFile = REGEX.SRC_DIR.test(document.uri.path);
+  } catch (ex) {
+    console.log('Error checking hasActiveQcpFile');
+  } finally {
+    commands.executeCommand('setContext', 'hasActiveQcpFile', hasActiveQcpFile);
+  }
 }

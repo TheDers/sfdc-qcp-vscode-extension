@@ -1,33 +1,44 @@
 import * as jsforce from 'jsforce';
-import { commands, Disposable, ExtensionContext, OutputChannel, ProgressLocation, TextDocument, window, workspace, Uri } from 'vscode';
-import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, OUTPUT_PANEL_NAME, QP, SETTINGS } from './common/constants';
+import { basename } from 'path';
+import {
+  commands,
+  Disposable,
+  ExtensionContext,
+  OutputChannel,
+  ProgressLocation,
+  TextDocument,
+  TextEditor,
+  Uri,
+  window,
+  workspace,
+} from 'vscode';
+import { FILE_PATHS, INPUT_OPTIONS, MEMONTO_KEYS, MESSAGES, OUTPUT_PANEL_NAME, QP, REGEX, SETTINGS } from './common/constants';
 import * as fileLogger from './common/file-logger';
-import { initConnection, onConnChange, onAuthInfoChange, deleteRecord, getFrontDoorUrl } from './common/sfdc-utils';
+import { deleteRecord, getFrontDoorUrl, initConnection, onAuthInfoChange, onConnChange } from './common/sfdc-utils';
 import {
   copyExtensionFileToProject,
+  copyExtensionFolderToProject,
   fileExists,
+  findActiveFileFromConfig,
   generateEncryptionKey,
-  getAllSrcFiles,
   getPathWithFileName,
+  getSfdcUri,
   logRecords,
   readAsJson,
   readConfig,
   saveConfig,
   setEncryptionKey,
+  updateContextIfActiveQcpFile,
   writeFileAsJson,
-  findActiveFileFromConfig,
-  getSfdcUri,
-  copyExtensionFolderToProject,
 } from './common/utils';
 import { backupFromRemote, backupLocal } from './flows/backup';
-import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords, pickRemoteFile } from './flows/diff';
+import { compareLocalFiles, compareLocalWithRemote, compareRemoteRecords } from './flows/diff';
+import { fetchAndSaveRecordRecord, getRecordName } from './flows/fetch-records';
 import { createOrUpdateGitignore, getExampleFilesToCreate, initializeOrgs } from './flows/init';
-import { getFileToPull, getRemoteFiles, queryFilesAndSave } from './flows/pull';
+import { queryFilesAndSave } from './flows/pull';
 import { getFilesToPush, pushFile } from './flows/push';
-import { ConfigData, ConfigDataEncrypted, StringOrUndefined, OrgInfo, CustomScriptFile } from './models';
+import { ConfigData, ConfigDataEncrypted, CustomScriptFile, OrgInfo, StringOrUndefined } from './models';
 import { SfdcTextDocumentProvider } from './providers/sfdc-text-document-provider';
-import { basename } from 'path';
-import { getRecordName, fetchAndSaveRecordRecord } from './flows/fetch-records';
 
 export let outputChannel: OutputChannel;
 
@@ -86,6 +97,7 @@ export class QcpExtension {
 
   registerListeners() {
     this.context.subscriptions.push(workspace.onDidSaveTextDocument(this.onSave, this, this.subscriptions));
+    this.context.subscriptions.push(window.onDidChangeActiveTextEditor(this.onActiveTextEditorChanged, this, this.subscriptions));
     const fsWatcher = workspace.createFileSystemWatcher('**/src/*.ts', true, true, false);
     this.context.subscriptions.push(fsWatcher.onDidDelete(this.onDelete, this, this.subscriptions));
   }
@@ -122,6 +134,9 @@ export class QcpExtension {
         await saveConfig(this.configData);
         console.log('[INIT] Project is SFDC QCP project.');
       }
+    }
+    if (window.activeTextEditor) {
+      updateContextIfActiveQcpFile(window.activeTextEditor.document);
     }
   }
 
@@ -316,34 +331,35 @@ export class QcpExtension {
   /**
    * COMMAND: PULL FILE
    * This pulls one file, chosen by the user, from SFDC, and saves the file to the /src directory and updates the entry in the config
+   * @deprecated 4.6.19
    */
-  async pullFile() {
-    try {
-      const customScriptFile = await getFileToPull(this.configData);
-      if (customScriptFile) {
-        window.withProgress(
-          {
-            location: ProgressLocation.Notification,
-            title: MESSAGES.PULL.PROGRESS_ONE(customScriptFile.fileName),
-            cancellable: false,
-          },
-          async (progress, token) => {
-            try {
-              const records = await queryFilesAndSave(this.configData, { conn: this.conn, customScriptFile, clearFileData: false });
-              window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
-              logRecords(outputChannel, 'Pulled Records', records);
-              return;
-            } catch (ex) {
-              window.showErrorMessage(ex.message, { modal: true });
-              return;
-            }
-          },
-        );
-      }
-    } catch (ex) {
-      console.log('Error pulling', ex);
-    }
-  }
+  // async pullFile() {
+  //   try {
+  //     const customScriptFile = await getFileToPull(this.configData);
+  //     if (customScriptFile) {
+  //       window.withProgress(
+  //         {
+  //           location: ProgressLocation.Notification,
+  //           title: MESSAGES.PULL.PROGRESS_ONE(customScriptFile.fileName),
+  //           cancellable: false,
+  //         },
+  //         async (progress, token) => {
+  //           try {
+  //             const records = await queryFilesAndSave(this.configData, { conn: this.conn, customScriptFile, clearFileData: false });
+  //             window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+  //             logRecords(outputChannel, 'Pulled Records', records);
+  //             return;
+  //           } catch (ex) {
+  //             window.showErrorMessage(ex.message, { modal: true });
+  //             return;
+  //           }
+  //         },
+  //       );
+  //     }
+  //   } catch (ex) {
+  //     console.log('Error pulling', ex);
+  //   }
+  // }
 
   /**
    * COMMAND: PULL ACTIVE FILE
@@ -385,19 +401,20 @@ export class QcpExtension {
   /**
    * COMMAND: PULL REMOTE FILE
    * Get list of files on SFDC and pull specific file
+   * @deprecated 4.6.19
    */
-  async pullRemoteFile() {
-    try {
-      const records = await getRemoteFiles(this.configData, this.conn);
-      if (records) {
-        window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
-        logRecords(outputChannel, 'Pulled Records', records);
-      }
-    } catch (ex) {
-      console.log('Error pulling remove file', ex);
-      window.showErrorMessage(ex.message);
-    }
-  }
+  // async pullRemoteFile() {
+  //   try {
+  //     const records = await getRemoteFiles(this.configData, this.conn);
+  //     if (records) {
+  //       window.showInformationMessage(MESSAGES.PULL.ALL_RECS_SUCCESS(records.length));
+  //       logRecords(outputChannel, 'Pulled Records', records);
+  //     }
+  //   } catch (ex) {
+  //     console.log('Error pulling remove file', ex);
+  //     window.showErrorMessage(ex.message);
+  //   }
+  // }
 
   /**
    * COMMAND: PUSH FILE
@@ -464,6 +481,10 @@ export class QcpExtension {
         const activeDocument = window.activeTextEditor.document;
         console.log('activeDocument', activeDocument);
 
+        if (!REGEX.SRC_DIR.test(activeDocument.uri.path)) {
+          return window.showErrorMessage(MESSAGES.PUSH.ERROR_NOTE_SRC_DIR);
+        }
+
         if (activeDocument.isUntitled) {
           return window.showErrorMessage(MESSAGES.PUSH.ERROR_FILE_UNTITLED);
         }
@@ -519,50 +540,50 @@ export class QcpExtension {
   /**
    * COMMAND: PUSH ALL FILES
    * Saves all files to SFDC
+   * @deprecated 4.6.19
    */
+  // async pushAllFiles() {
+  //   try {
+  //     const pickedItem = await window.showQuickPick(INPUT_OPTIONS.PUSH_ALL_CONFIRM());
+  //     if (pickedItem && pickedItem.label === INPUT_OPTIONS.PUSH_ALL_CONFIRM()[0].label) {
+  //       window.withProgress(
+  //         {
+  //           location: ProgressLocation.Notification,
+  //           title: MESSAGES.PUSH.PROGRESS_MULTI,
+  //           cancellable: true,
+  //         },
+  //         async (progress, token) => {
+  //           const existingFiles = await getAllSrcFiles();
+  //           const total = existingFiles.length;
+  //           let increment = 100 / total;
+  //           let count = 0;
 
-  async pushAllFiles() {
-    try {
-      const pickedItem = await window.showQuickPick(INPUT_OPTIONS.PUSH_ALL_CONFIRM());
-      if (pickedItem && pickedItem.label === INPUT_OPTIONS.PUSH_ALL_CONFIRM()[0].label) {
-        window.withProgress(
-          {
-            location: ProgressLocation.Notification,
-            title: MESSAGES.PUSH.PROGRESS_MULTI,
-            cancellable: true,
-          },
-          async (progress, token) => {
-            const existingFiles = await getAllSrcFiles();
-            const total = existingFiles.length;
-            let increment = 100 / total;
-            let count = 0;
+  //           outputChannel.appendLine('\n******************** Pushed Files ********************');
 
-            outputChannel.appendLine('\n******************** Pushed Files ********************');
-
-            for (const file of existingFiles) {
-              count++;
-              if (token.isCancellationRequested) {
-                window.showInformationMessage(`Remaining files cancelled`);
-                break;
-              }
-              try {
-                const record = await pushFile(this.configData, file.fsPath, this.conn);
-                if (record) {
-                  outputChannel.appendLine(`- [SUCCESS] ${record.Name} (${record.Id})`);
-                  window.showInformationMessage(`Successfully pushed ${record.Name}.`);
-                }
-              } catch (ex) {
-                outputChannel.appendLine(`- [FAILURE] ${file.path} (${ex.message})`);
-                window.showErrorMessage(`Error uploading file: ${ex.message}.`);
-              } finally {
-                progress.report({ increment, message: `Uploading file ${count} of ${total}` });
-              }
-            }
-          },
-        );
-      }
-    } catch (ex) {}
-  }
+  //           for (const file of existingFiles) {
+  //             count++;
+  //             if (token.isCancellationRequested) {
+  //               window.showInformationMessage(`Remaining files cancelled`);
+  //               break;
+  //             }
+  //             try {
+  //               const record = await pushFile(this.configData, file.fsPath, this.conn);
+  //               if (record) {
+  //                 outputChannel.appendLine(`- [SUCCESS] ${record.Name} (${record.Id})`);
+  //                 window.showInformationMessage(`Successfully pushed ${record.Name}.`);
+  //               }
+  //             } catch (ex) {
+  //               outputChannel.appendLine(`- [FAILURE] ${file.path} (${ex.message})`);
+  //               window.showErrorMessage(`Error uploading file: ${ex.message}.`);
+  //             } finally {
+  //               progress.report({ increment, message: `Uploading file ${count} of ${total}` });
+  //             }
+  //           }
+  //         },
+  //       );
+  //     }
+  //   } catch (ex) {}
+  // }
 
   /**
    * COMMAND: Backup
@@ -607,8 +628,13 @@ export class QcpExtension {
    * COMMAND: Compare
    * Compares a local file with a remote record
    */
-  async diff() {
+  async diff(useActiveFile = false) {
     try {
+      if (useActiveFile && window.activeTextEditor) {
+        await compareLocalWithRemote(true, this.configData, this.conn, window.activeTextEditor.document.uri.fsPath);
+        return;
+      }
+
       const pickedOption = await window.showQuickPick(INPUT_OPTIONS.COMPARE_CONFIRMATION());
       if (pickedOption) {
         // pick local file
@@ -644,19 +670,20 @@ export class QcpExtension {
   /**
    * COMMAND: VIEW FILE FROM SALESFORCE
    * Compares a local file with a remote record
+   * @deprecated 4.6.19
    */
-  async viewFromSalesforce() {
-    try {
-      const conn = await initConnection(this.configData.orgInfo, this.conn);
-      const remoteFile = await pickRemoteFile(conn);
-      if (remoteFile) {
-        await commands.executeCommand('vscode.open', remoteFile.uri);
-      }
-    } catch (ex) {
-      console.log(ex);
-      window.showErrorMessage(`Error comparing files: ${ex.message}.`);
-    }
-  }
+  // async viewFromSalesforce() {
+  //   try {
+  //     const conn = await initConnection(this.configData.orgInfo, this.conn);
+  //     const remoteFile = await pickRemoteFile(conn);
+  //     if (remoteFile) {
+  //       await commands.executeCommand('vscode.open', remoteFile.uri);
+  //     }
+  //   } catch (ex) {
+  //     console.log(ex);
+  //     window.showErrorMessage(`Error comparing files: ${ex.message}.`);
+  //   }
+  // }
 
   /**
    * COMMAND: VIEW TRANSPILED CODE FOR CURRENT FILE
@@ -739,6 +766,13 @@ export class QcpExtension {
    * EVENT: onSave
    * When the config file is manually modified, the contents is re-read into the configuration in memory
    */
+
+  async onActiveTextEditorChanged(ev: TextEditor | undefined): Promise<void> {
+    if (ev) {
+      updateContextIfActiveQcpFile(ev.document);
+    }
+  }
+
   async onSave(ev: TextDocument) {
     // If user manually updated config, we need to update in-memory configuration
     if (ev.fileName.endsWith(FILE_PATHS.CONFIG.target)) {

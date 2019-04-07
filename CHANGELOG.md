@@ -3,7 +3,20 @@
 [unreleased]
 **date TBD**
 
-- Added support for fetching a quoteModel and saving locally and running unit tests (#42)
+- Added support for fetching a quoteModel and saving locally and running unit tests. (#42)
+- Orgs were often listed as invalid and required re-authentication, even though the token refresh was successful. (#44)
+- Removed example file for async/await because this was not transpiled correctly with the QCP transpiler.
+- Added button icons to the editor navigation bar for the following use-cases:
+  - To pull or push the active file that appear in the top right section of the tab bar of an active file.
+  - To compare the active QCP file with the record from Salesforce.
+  - To view the active QCP file in Salesforce.
+- Added various [Octicons](https://octicons.github.com/) to commands. So far, the only icons visible are in the active editor navigation menu bar.
+- Removed a number of commands that were confusing and focused on commands that work with the active file, as that is the most common use-case
+  - Removed Commands:
+    - `SFDC QCP: Pull specific QCP file from SFDC`
+    - `SFDC QCP: Pull remote record from Salesforce`
+    - `SFDC QCP: Push all files to Salesforce`
+    - `SFDC QCP: Open QCP record from Salesforce`
 
 ### 0.5.0
 

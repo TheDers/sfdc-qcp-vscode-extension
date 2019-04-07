@@ -25,23 +25,8 @@ export function isFieldVisible(fieldName, line) {
 export function isFieldEditable(fieldName, line) {
   //console.log(fieldName);
   //console.log(line);
-  // All times Rate Card Price Not Editable
-  if (fieldName == 'ZVP_Rate_Card_Price__c') return false;
   // List Price Not Editable at Bundle Level
-  if (fieldName == 'SBQQ__ListPrice__c' && line.SBQQ__Bundle__c == true) return false;
-  // Start & End Dates are Locked at Local,Outbound, Bulk, Ext
-  if (
-    (fieldName == 'SBQQ__StartDate__c' || fieldName == 'SBQQ__EndDate__c') &&
-    (line.SBQQ__ProductCode__c.includes('EXT') ||
-      line.SBQQ__ProductCode__c.includes('BLK') ||
-      line.SBQQ__ProductCode__c.includes('Local') ||
-      line.SBQQ__ProductCode__c.includes('Outbound'))
-  ) {
-    return false;
-  }
-
-  // All Fields are Locked when QL is Amendment Locked Flag True
-  if (line.ZVP_Lock_Amendment_Record__c == true) {
+  if (fieldName === 'SBQQ__ListPrice__c' && line.SBQQ__Bundle__c === true) {
     return false;
   }
 

@@ -18,6 +18,7 @@ export const CUSTOM_SCRIPT_API_NAME = 'SBQQ__CustomScript__c';
 export const REGEX = {
   ENDS_WITH_DASH_NUM: /-\d+$/,
   ANY_CHAR: /./gi,
+  SRC_DIR: /\/src\//i,
 };
 
 // global settings keys
@@ -81,10 +82,6 @@ export const QP = {
     LOCAL: 'Local - Copy all files in src folder to backup directory.',
     REMOTE: 'Remote - Fetch all files from remote and put into backup directory.',
   },
-  PUSH_ALL_CONFIRM: {
-    YES: 'Yes - Push all files to Salesforce.',
-    NO: 'No - Get me outta here!',
-  },
   PUSH_ON_SAVE_CONFIRM: {
     YES: 'Yes - Push file to Salesforce.',
     NO: 'Cancel',
@@ -134,6 +131,7 @@ export const MESSAGES = {
     ERROR_W_FILENAME: (filename: string) => `There was an error pushing ${filename} to Salesforce.`,
     ERROR_W_EX: (filename: string, message: string) => `There was an error pushing ${filename} to Salesforce. ${message}`,
     ERROR_FILE_UNTITLED: 'Please save your untitled file before pushing to Salesforce.',
+    ERROR_NOTE_SRC_DIR: 'Only files in the src directory can be pushed to Salesforce.',
     ERROR_SAVING_FILE: 'There was an error saving your modified active file, please save your changes and try pushing to Salesforce again.',
     ERROR_NO_ACTIVE_FILE: 'There is no active file to push to Salesforce.',
     PROGRESS_ONE: 'Pushing file to Salesforce.',
@@ -170,7 +168,6 @@ type INPUT_OPTIONS = {
   PULL_ONE_SHOW_FILE_LIST: (files: CustomScriptFile[]) => QuickPickItem[];
   PULL_ONE_REMOTE_SHOW_FILE_LIST: (files: CustomScriptBase[]) => QuickPickItem[];
   PUSH_SHOW_FILE_LIST: (uris: Uri[]) => QuickPickItem[];
-  PUSH_ALL_CONFIRM: () => QuickPickItem[];
   PUSH_ON_SAVE_CONFIRM: (filename: string) => QuickPickItem[];
   DELETE_REMOTE_ON_DELETE_CONFIRM: (recordId: string, filename: string) => QuickPickItem[];
   BACKUP_CHOOSE_SRC: () => QuickPickItem[];
@@ -257,10 +254,6 @@ export const INPUT_OPTIONS: INPUT_OPTIONS = {
   PUSH_SHOW_FILE_LIST: (uris: Uri[]) => {
     return uris.map(uri => ({ label: uri.fsPath, picked: false }));
   },
-  PUSH_ALL_CONFIRM: () => [
-    { label: QP.PUSH_ALL_CONFIRM.YES, picked: true, alwaysShow: true },
-    { label: QP.PUSH_ALL_CONFIRM.NO, picked: false, alwaysShow: true },
-  ],
   PUSH_ON_SAVE_CONFIRM: (filename: string) => [
     { label: QP.PUSH_ON_SAVE_CONFIRM.YES, detail: filename },
     { label: QP.PUSH_ON_SAVE_CONFIRM.NO },
@@ -370,6 +363,10 @@ export const QUERIES = {
 
 export const client_id = '3MVG9KsVczVNcM8yH1pNeimwzaNciPgPq5lCmYI32we9ERWVHCx.vFaFRs9ejsGSHDoWyb8RGInzZJjAHJsQa';
 
+/**
+ * Note: we are not providing a client_secret, and JSForce does not support omitting this paramter
+ * This is why the URL is being built manually
+ */
 export const AUTH_HTTP: AuthHttp = {
   getUserAgentAuth: {
     url: (domain: string) => {
