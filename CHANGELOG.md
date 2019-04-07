@@ -1,7 +1,10 @@
 # Change Log
 
 [unreleased]
-**date TBD**
+
+### 1.0.0
+
+**4-6-2019**
 
 - Added support for fetching a quoteModel and saving locally and running unit tests. (#42)
 - Orgs were often listed as invalid and required re-authentication, even though the token refresh was successful. (#44)
