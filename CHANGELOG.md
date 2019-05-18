@@ -2,6 +2,12 @@
 
 [unreleased]
 
+### 1.0.1
+
+**5-17-2019**
+
+- The authorization URL no longer worked because it was double encoded (#48)
+
 ### 1.0.0
 
 **4-6-2019**
