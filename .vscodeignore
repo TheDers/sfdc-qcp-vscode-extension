@@ -9,3 +9,5 @@ tsconfig.json
 **/tslint.json
 **/*.map
 webpack.config.js
+.prettierrc
+node_modules
