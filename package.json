@@ -306,6 +306,7 @@
     "webpack-cli": "^3.3.2"
   },
   "dependencies": {
+    "ajv": "^6.10.0",
     "axios": "^0.18.0",
     "fs-extra": "^7.0.1",
     "jsforce": "^1.9.1",
