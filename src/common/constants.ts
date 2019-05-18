@@ -374,7 +374,7 @@ export const AUTH_HTTP: AuthHttp = {
         response_type: `token`,
         client_id,
         scope: `api refresh_token web`,
-        redirect_uri: 'vscode%3A%2F%2Fpaustint.sfdc-qcp-vscode-extension%2Fauth_callback',
+        redirect_uri: 'vscode://paustint.sfdc-qcp-vscode-extension/auth_callback',
         prompt: 'login',
       });
       return `${domain}/services/oauth2/authorize?${params}`;
