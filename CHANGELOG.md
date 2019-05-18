@@ -2,11 +2,17 @@
 
 [unreleased]
 
+### 1.0.2
+
+**5-17-2019**
+
+- Improved build process to use webpack as recommended by VSCode.
+
 ### 1.0.1
 
 **5-17-2019**
 
-- The authorization URL no longer worked because it was double encoded (#48)
+- The authorization URL no longer worked because it was double encoded. (#48)
 
 ### 1.0.0
 
