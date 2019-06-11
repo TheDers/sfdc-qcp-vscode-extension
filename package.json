@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with the Salesforce CPQ Quote Calculator Plugin using an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "author": {
     "name": "Austin Turner",
     "url": "https://github.com/paustint"
@@ -307,7 +307,7 @@
   },
   "dependencies": {
     "ajv": "^6.10.0",
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "fs-extra": "^7.0.1",
     "jsforce": "^1.9.1",
     "sanitize-filename": "^1.6.1"

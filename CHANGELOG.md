@@ -2,6 +2,12 @@
 
 [unreleased]
 
+### 1.0.3
+
+**6-10-2019**
+
+- Fixed npm reported security vulnerability.
+
 ### 1.0.2
 
 **5-17-2019**
