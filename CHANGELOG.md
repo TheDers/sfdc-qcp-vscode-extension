@@ -2,6 +2,13 @@
 
 [unreleased]
 
+### 1.0.4
+
+**7-13-2019**
+
+- Fixed npm reported security vulnerability (lodash).
+- Added script to ensure npm modules are https.
+
 ### 1.0.3
 
 **6-10-2019**

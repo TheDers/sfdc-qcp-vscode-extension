@@ -3,7 +3,7 @@
   "displayName": "Salesforce CPQ - Quote Calculator Plugin",
   "description": "Work with the Salesforce CPQ Quote Calculator Plugin using an IDE driven workflow.",
   "publisher": "paustint",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": {
     "name": "Austin Turner",
     "url": "https://github.com/paustint"
@@ -289,7 +289,8 @@
     "watch": "webpack --mode none --watch",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test-compile": "tsc -p ./",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    "test": "npm run compile && node ./node_modules/vscode/bin/test",
+    "postshrinkwrap": "replace --silent 'http://' 'https://' ./package-lock.json"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
@@ -298,6 +299,7 @@
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.10.25",
     "@types/sanitize-filename": "^1.1.28",
+    "replace": "^1.1.0",
     "ts-loader": "^6.0.0",
     "tslint": "^5.8.0",
     "typescript": "^3.1.4",
